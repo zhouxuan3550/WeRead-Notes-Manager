@@ -1,0 +1,151 @@
+import SwiftUI
+import SwiftData
+
+struct BookListView: View {
+    @Environment(AppViewModel.self) private var appVM
+    @Environment(\.modelContext) private var modelContext
+    @State private var showAddBook = false
+    @State private var newBookTitle = ""
+    @State private var newBookAuthor = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            toolbar
+            Divider()
+            if appVM.filteredBooks.isEmpty {
+                ContentUnavailableView(
+                    "暂无书籍",
+                    systemImage: "books.vertical",
+                    description: Text("点击上方 + 添加书籍，或导入笔记文件")
+                )
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 14)], spacing: 18) {
+                        ForEach(appVM.filteredBooks) { book in
+                            Button {
+                                appVM.selectedBook = book
+                                appVM.selectedNote = nil
+                            } label: {
+                                BookShelfCard(book: book, isSelected: appVM.selectedBook?.id == book.id)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button("删除", role: .destructive) {
+                                    appVM.deleteBook(book, context: modelContext)
+                                }
+                            }
+                        }
+                    }
+                    .padding(16)
+                }
+            }
+        }
+        .sheet(isPresented: $showAddBook) {
+            addBookSheet
+        }
+    }
+
+    private var bookSelection: Binding<UUID?> {
+        Binding(
+            get: { appVM.selectedBook?.id },
+            set: { newID in
+                appVM.selectedBook = appVM.filteredBooks.first { $0.id == newID }
+                appVM.selectedNote = nil
+            }
+        )
+    }
+
+    private var toolbar: some View {
+        let stats = appVM.libraryStats
+        return HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("书籍")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("\(stats.bookCount) 本书 · \(stats.noteCount) 条笔记")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                showAddBook = true
+            } label: {
+                Image(systemName: "plus")
+            }
+            .help("添加书籍")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private var addBookSheet: some View {
+        VStack(spacing: 16) {
+            Text("添加书籍")
+                .font(.system(size: 18, weight: .semibold))
+            TextField("书名", text: $newBookTitle)
+                .textFieldStyle(.roundedBorder)
+            TextField("作者（可选）", text: $newBookAuthor)
+                .textFieldStyle(.roundedBorder)
+            HStack {
+                Button("取消") {
+                    showAddBook = false
+                    newBookTitle = ""
+                    newBookAuthor = ""
+                }
+                Spacer()
+                Button("添加") {
+                    guard !newBookTitle.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                    let author = newBookAuthor.trimmingCharacters(in: .whitespaces)
+                    appVM.addBook(title: newBookTitle, author: author.isEmpty ? nil : author, context: modelContext)
+                    showAddBook = false
+                    newBookTitle = ""
+                    newBookAuthor = ""
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(newBookTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 360)
+    }
+}
+
+struct BookShelfCard: View {
+    let book: Book
+    let isSelected: Bool
+    @State private var isHovering = false
+
+    var body: some View {
+        // 一次性算 thoughtCount，避免 contains + filter 走两遍。
+        let thoughtCount = book.notes.lazy.filter { $0.userNote?.isEmpty == false }.count
+        VStack(alignment: .leading, spacing: 9) {
+            BookCoverView(book: book, size: .large)
+                .shadow(color: .black.opacity(isHovering ? 0.26 : 0.18), radius: isHovering ? 12 : 7, y: isHovering ? 7 : 4)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(book.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(2)
+                Text(book.author ?? "未知作者")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text("\(book.notes.count) 条笔记")
+                    if thoughtCount > 0 {
+                        Text("· \(thoughtCount) 想法")
+                    }
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(10)
+        .glassPanel(isHighlighted: isSelected)
+        .scaleEffect(isHovering ? 1.025 : 1)
+        .animation(.spring(response: 0.24, dampingFraction: 0.82), value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+}

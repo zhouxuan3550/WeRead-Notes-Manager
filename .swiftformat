@@ -1,0 +1,23 @@
+{
+  "indent": 4,
+  "linebreaks": "lf",
+  "trimTrailingWhitespace": true,
+  "insertFinalNewline": true,
+  "maxWidth": 110,
+  "wrapArguments": {
+    "beforeFirst": false,
+    "maxWidth": 110
+  },
+  "wrapCollections": {
+    "beforeFirst": false,
+    "maxWidth": 100
+  },
+  "explicitSelf": false,
+  "selfRequired": false,
+  "importGrouping": "alphabetical",
+  "sortedImports": false,
+  "spacesAroundRangeOperators": false,
+  "shortOptionals": false,
+  "void": "Void",
+  "assetLiterals": true
+}

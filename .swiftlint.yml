@@ -1,0 +1,77 @@
+opt_in_rules:
+  - array_init
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - conditional_returns
+  - contains_over_filter_is_empty
+  - contains_over_filter_count
+  - contains_over_range
+  - empty_count
+  - empty_string
+  - explicit_init
+  - fallthrough_in_switch
+  - fatal_error_message
+  - first_where
+  - flatmap_over_map_reduce
+  - identical_operands
+  - joined_default_parameter
+  - last_where
+  - legacy_random
+  - literal_expression_end_indentation
+  - lower_acl_than_parent
+  - missing_hashes
+  - modifier_order
+  - multiline_arguments
+  - multiline_function_chains
+  - multiline_literal_brackets
+  - multiline_parameters
+  - nimble_operator
+  - no_fallthrough_only
+  - no_grouping_extension_over_cases
+  - nslocalizedstring_key
+  - number_separator
+  - object_literal
+  - operator_usage_whitespace
+  - overridden_super_call
+  - prefer_self_type_over_type_of_self
+  - prefer_zero_over_explicit_init
+  - prohibited_super_call
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - sorted_imports
+  - switch_case_on_newline
+  - toggle_bool
+  - trailing_closure
+  - unavailable_condition
+  - unneeded_parentheses_in_closure_argument
+  - untyped_error_in_catch
+  - vertical_parameter_alignment
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - yoda_condition
+
+disabled_rules:
+  - todo
+  - line_length
+  - file_length
+  - type_body_length
+  - function_body_length
+  - identifier_name
+  - force_cast
+  - force_try
+  - cyclomatic_complexity
+
+excluded:
+  - .build
+  - WeReadNotesManager.app
+  - 书摘温故.app
+  - Sources/WeReadNotesManager/Views/ReadingCardView.swift  # 第三方 SwiftUI 卡片样式
+
+analyzer_rules:
+  - unused_import
+  - unused_declaration
+  - unused_private_declaration
+
+reporter: "xcode"
