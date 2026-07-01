@@ -15,55 +15,62 @@ final class AppViewModel {
     var noteSortMode: NoteSortMode = .createdDescending
     var syncState = SyncState()
 
-    // MARK: - Derived Cache
+    // MARK: - 派生缓存（按依赖键自动失效）
+    //
+    // 用 `SmartCache` 替代手写 invalidation：
+    // - 缓存 key = 依赖的所有输入（books 版本号 + 过滤参数）
+    // - 输入变化 → key 变化 → 自动失效
+    // - 相同 key → 直接返回缓存（O(1)）
 
-    /// 派生缓存：`books` 变化或显式失效时统一重算。
-    /// 通过 `@ObservationIgnored` 避免触发 SwiftUI 重新订阅。
     @ObservationIgnored
-    private var cachedAllNotes: [ReadingNote] = []
-    @ObservationIgnored
-    private var cachedStats: LibraryStats?
-    @ObservationIgnored
-    private var cachedSearchIndex: [SearchIndexEntry] = []
-    @ObservationIgnored
-    private var cachedRecommendedNotes: [ReadingNote] = []
-    @ObservationIgnored
-    private var cachedFilteredNotes: [ReadingNote] = []
+    private var booksVersion: Int = 0
 
-    private var needsAllNotesRebuild = true
-    private var needsStatsRebuild = true
-    private var needsSearchIndexRebuild = true
-    private var needsRecommendedRebuild = true
-    private var needsFilteredRebuild = true
-    
-    // 用于追踪最后一次的过滤参数
-    private var lastSelectedSidebarItem: SidebarItem?
-    private var lastSelectedBook: Book?
-    private var lastSearchText: String = ""
-    private var lastNoteKindFilter: NoteKindFilter = .all
-    private var lastNoteSortMode: NoteSortMode = .createdDescending
+    @ObservationIgnored
+    private let notesCache = SmartCache<Int, [ReadingNote]>()
+
+    @ObservationIgnored
+    private let statsCache = SmartCache<Int, LibraryStats>()
+
+    @ObservationIgnored
+    private let searchIndexCache = SmartCache<Int, [SearchIndexEntry]>()
+
+    @ObservationIgnored
+    private let filteredNotesCache = SmartCache<FilteredKey, [ReadingNote]>()
+
+    @ObservationIgnored
+    private let recommendedCache = SmartCache<Int, [ReadingNote]>()
+
+    /// filteredNotes 的复合 key（依赖所有过滤参数）
+    struct FilteredKey: Hashable {
+        let booksVersion: Int
+        let sidebar: SidebarItem?
+        let bookID: UUID?
+        let search: String
+        let kind: NoteKindFilter
+        let sort: NoteSortMode
+    }
 
     // MARK: - Books Lifecycle
 
     func updateBooks(_ newBooks: [Book]) {
         books = newBooks
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     func refreshBooks(context: ModelContext) {
         let descriptor = FetchDescriptor<Book>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
         books = SafePersistence.fetch(context, descriptor, label: "refreshBooks")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
-    // MARK: - Computed Properties (cached)
+    // MARK: - Computed Properties（依赖追踪缓存）
 
     var allNotes: [ReadingNote] {
-        if needsAllNotesRebuild {
-            cachedAllNotes = books.flatMap { $0.notes }.filter { !$0.isDeleted }
-            needsAllNotesRebuild = false
+        notesCache.get(booksVersion) {
+            Perf.measure("allNotes") {
+                books.flatMap { $0.notes }.filter { !$0.isDeleted }
+            }
         }
-        return cachedAllNotes
     }
 
     /// 软删除的笔记（用于回收站视图）。
@@ -79,56 +86,62 @@ final class AppViewModel {
     }
 
     var libraryStats: LibraryStats {
-        if needsStatsRebuild || cachedStats == nil {
-            cachedStats = computeStats(from: books)
-            needsStatsRebuild = false
+        statsCache.get(booksVersion) {
+            computeStats(from: books)
         }
-        return cachedStats ?? LibraryStats(bookCount: 0, noteCount: 0, thoughtCount: 0, unreviewedCount: 0)
     }
 
     var filteredNotes: [ReadingNote] {
-        // 检查是否真的需要重新计算
-        let shouldRebuild = needsFilteredRebuild 
-            || selectedSidebarItem != lastSelectedSidebarItem
-            || selectedBook?.id != lastSelectedBook?.id
-            || searchText != lastSearchText
-            || noteKindFilter != lastNoteKindFilter
-            || noteSortMode != lastNoteSortMode
-        
-        if shouldRebuild {
-            let base: [ReadingNote]
-            switch selectedSidebarItem {
-            case .allNotes:
-                base = allNotes
-            case .favorites:
-                base = allNotes.filter(\.isFavorite)
-            case .unreviewed:
-                base = allNotes.filter { !$0.isReviewed }
-            case .todayReview:
-                base = reviewRecommendedNotes()
-            case .randomNotes:
-                base = Array(allNotes.shuffled().prefix(10))
-            case .books:
-                base = selectedBook?.notes ?? allNotes
-            case .dashboard, .themeMap, .readingReport, .syncHistory, .settings,
-                 .tags, .askAI, .trash, .none:
-                base = []
+        let key = FilteredKey(
+            booksVersion: booksVersion,
+            sidebar: selectedSidebarItem,
+            bookID: selectedBook?.id,
+            search: searchText,
+            kind: noteKindFilter,
+            sort: noteSortMode
+        )
+        return filteredNotesCache.get(key) {
+            Perf.measure("filteredNotes") {
+                let base: [ReadingNote]
+                switch selectedSidebarItem {
+                case .allNotes:
+                    base = allNotes
+                case .favorites:
+                    base = allNotes.filter(\.isFavorite)
+                case .unreviewed:
+                    base = allNotes.filter { !$0.isReviewed }
+                case .todayReview:
+                    base = reviewRecommendedNotes()
+                case .randomNotes:
+                    base = Array(allNotes.shuffled().prefix(10))
+                case .books:
+                    base = selectedBook?.notes ?? allNotes
+                case .dashboard, .mindMap, .readingReport, .syncHistory, .settings,
+                     .tags, .askAI, .writingAssistant, .trash, .none:
+                    base = []
+                }
+                return sortNotes(applyKindFilter(applySearch(base)))
             }
-            cachedFilteredNotes = sortNotes(applyKindFilter(applySearch(base)))
-            
-            // 更新状态
-            lastSelectedSidebarItem = selectedSidebarItem
-            lastSelectedBook = selectedBook
-            lastSearchText = searchText
-            lastNoteKindFilter = noteKindFilter
-            lastNoteSortMode = noteSortMode
-            needsFilteredRebuild = false
         }
-        return cachedFilteredNotes
     }
 
     var filteredBooks: [Book] {
-        applyBookSearch(books)
+        let defaults = UserDefaults.standard
+        let filterLowNoteBooks = defaults.object(forKey: "filterLowNoteBooksOnImport") as? Bool ?? true
+        let minNotesPerBook = defaults.object(forKey: "minNotesPerImportedBook") as? Int ?? 5
+        return filteredBooks(
+            filterLowNoteBooks: filterLowNoteBooks,
+            minNotesPerBook: minNotesPerBook
+        )
+    }
+
+    func filteredBooks(filterLowNoteBooks: Bool, minNotesPerBook: Int) -> [Book] {
+        let visibleBooks = applyLowNoteBookFilter(
+            books,
+            isEnabled: filterLowNoteBooks,
+            minNotesPerBook: minNotesPerBook
+        )
+        return applyBookSearch(visibleBooks)
     }
 
     // MARK: - Search
@@ -153,11 +166,15 @@ final class AppViewModel {
         onlyThoughts: Bool,
         onlyFavorites: Bool
     ) -> [ReadingNote] {
-        ensureSearchIndex()
+        let index = searchIndexCache.get(booksVersion) {
+            Perf.measure("searchIndex") {
+                allNotes.map(SearchIndexEntry.init(note:))
+            }
+        }
         let normalizedQuery = SearchIndexEntry.normalize(query)
         let candidates = normalizedQuery.isEmpty
-            ? cachedSearchIndex
-            : cachedSearchIndex.filter { $0.haystack.contains(normalizedQuery) }
+            ? index
+            : index.filter { $0.haystack.contains(normalizedQuery) }
 
         return candidates.compactMap { entry in
             let note = entry.note
@@ -170,19 +187,19 @@ final class AppViewModel {
         .sorted { ($0.createdAt ?? $0.importedAt) > ($1.createdAt ?? $1.importedAt) }
     }
 
-    private func ensureSearchIndex() {
-        if needsSearchIndexRebuild {
-            cachedSearchIndex = allNotes.map(SearchIndexEntry.init(note:))
-            needsSearchIndexRebuild = false
-        }
-    }
-
     private func applyBookSearch(_ books: [Book]) -> [Book] {
         guard !searchText.isEmpty else { return books }
         let query = searchText.lowercased()
         return books.filter {
             $0.title.localizedCaseInsensitiveContains(query)
             || ($0.author?.localizedCaseInsensitiveContains(query) ?? false)
+        }
+    }
+
+    private func applyLowNoteBookFilter(_ books: [Book], isEnabled: Bool, minNotesPerBook: Int) -> [Book] {
+        guard isEnabled, minNotesPerBook > 1 else { return books }
+        return books.filter { book in
+            book.notes.lazy.filter { !$0.isDeleted }.count >= minNotesPerBook
         }
     }
 
@@ -219,11 +236,9 @@ final class AppViewModel {
     // MARK: - Recommended Notes
 
     func reviewRecommendedNotes() -> [ReadingNote] {
-        if needsRecommendedRebuild {
-            cachedRecommendedNotes = reviewRecommendedNotes(from: allNotes)
-            needsRecommendedRebuild = false
+        recommendedCache.get(booksVersion) {
+            reviewRecommendedNotes(from: allNotes)
         }
-        return cachedRecommendedNotes
     }
 
     private func reviewRecommendedNotes(from notes: [ReadingNote]) -> [ReadingNote] {
@@ -250,7 +265,7 @@ final class AppViewModel {
         note.lastReviewedAt = Date()
         note.updatedAt = Date()
         // 复习相关字段改变 → 推荐排序需重算
-        needsRecommendedRebuild = true
+        booksVersion &+= 1
     }
 
     /// 用 SRS 评级处理一条笔记（Feature 5）。
@@ -259,7 +274,7 @@ final class AppViewModel {
         let next = SpacedRepetitionService.nextState(after: grade, current: current)
         SpacedRepetitionService.apply(next, to: note, grade: grade)
         SafePersistence.save(context, label: "review:srs")
-        needsRecommendedRebuild = true
+        booksVersion &+= 1
     }
 
     /// 当前 due 的笔记（nextReviewAt 为空或 <= 现在）。
@@ -295,7 +310,7 @@ final class AppViewModel {
     func toggleFavorite(_ note: ReadingNote) {
         note.isFavorite.toggle()
         note.updatedAt = Date()
-        needsRecommendedRebuild = true
+        booksVersion &+= 1
     }
 
     func deleteNote(_ note: ReadingNote, context: ModelContext) {
@@ -326,7 +341,7 @@ final class AppViewModel {
         note.deletedAt = nil
         note.updatedAt = Date()
         SafePersistence.save(context, label: "restoreNote")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     /// 清理超过保留期的已删除笔记。
@@ -346,7 +361,7 @@ final class AppViewModel {
         }
         if !toPurge.isEmpty {
             SafePersistence.save(context, label: "purgeExpiredNotes:commit")
-            invalidateAllCaches()
+            booksVersion &+= 1
         }
     }
 
@@ -354,7 +369,7 @@ final class AppViewModel {
         for note in book.notes { context.delete(note) }
         context.delete(book)
         SafePersistence.save(context, label: "deleteBook")
-        invalidateAllCaches()
+        booksVersion &+= 1
         if selectedBook?.id == book.id {
             selectedBook = nil
             selectedNote = nil
@@ -417,7 +432,7 @@ final class AppViewModel {
             }
         }
         SafePersistence.save(context, label: "batchMove")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     // MARK: - Tag Operations (Feature 3)
@@ -461,7 +476,7 @@ final class AppViewModel {
         }
         context.delete(tag)
         SafePersistence.save(context, label: "deleteTag")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     /// 重命名标签。
@@ -492,7 +507,7 @@ final class AppViewModel {
         let book = Book(title: title, author: author)
         context.insert(book)
         SafePersistence.save(context, label: "addBook")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     func addNote(to book: Book, highlight: String, userNote: String?, chapter: String?, location: String?, context: ModelContext) {
@@ -524,7 +539,7 @@ final class AppViewModel {
             context.insert(book)
         }
         SafePersistence.save(context, label: "seedIfEmpty")
-        invalidateAllCaches()
+        booksVersion &+= 1
     }
 
     // MARK: - Data Management
@@ -542,19 +557,15 @@ final class AppViewModel {
     // MARK: - Cache Invalidation
 
     private func invalidateAllCaches() {
-        needsAllNotesRebuild = true
-        needsStatsRebuild = true
-        needsSearchIndexRebuild = true
-        needsRecommendedRebuild = true
-        needsFilteredRebuild = true
+        booksVersion &+= 1
     }
 
     /// 笔记级别失效：数量/统计/推荐排序变；search index 不变（文本不变）。
     private func invalidateNotesCaches() {
-        needsAllNotesRebuild = true
-        needsStatsRebuild = true
-        needsRecommendedRebuild = true
-        needsFilteredRebuild = true
+        booksVersion &+= 1
+        booksVersion &+= 1
+        booksVersion &+= 1
+        booksVersion &+= 1
     }
 
     private func computeStats(from books: [Book]) -> LibraryStats {

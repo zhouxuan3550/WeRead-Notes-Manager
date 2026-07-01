@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(AppViewModel.self) private var appVM
+    @Environment(\.themePalette) private var palette
     @Binding var searchText: String
     let isAutoSyncEnabled: Bool
     let isSyncing: Bool
@@ -13,7 +14,7 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 18) {
                 CommandBar(
                     searchText: $searchText,
                     isAutoSyncEnabled: isAutoSyncEnabled,
@@ -33,19 +34,26 @@ struct DashboardView: View {
                 recentShelf
                 memoryStats
             }
-            .padding(22)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 24)
         }
     }
 
     private var hero: some View {
         let reviewCount = appVM.reviewRecommendedNotes().count
-        return HStack(alignment: .top, spacing: 22) {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("今日温故")
-                    .font(.system(size: 30, weight: .bold))
+        return HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 9) {
+                    Text("今日温故")
+                        .font(.system(size: 26, weight: .semibold))
+                        .tracking(0)
+                    if featuredNote != nil {
+                        LiveBadge()
+                    }
+                }
                 Text("从你的微信读书笔记里，挑一条今天值得重看的。")
                     .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
 
                 if let note = featuredNote {
                     Button {
@@ -62,7 +70,8 @@ struct DashboardView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("今天")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(palette.textPrimary)
                 quickAction("复习 \(reviewCount) 条", icon: "rectangle.stack") {
                     appVM.selectedSidebarItem = .todayReview
                 }
@@ -72,27 +81,38 @@ struct DashboardView: View {
                 quickAction("搜索笔记", icon: "magnifyingglass") {
                     appVM.selectedSidebarItem = .allNotes
                 }
-                quickAction("应用设置", icon: "gearshape") {
-                    appVM.selectedSidebarItem = .settings
+                quickAction("阅读报告", icon: "doc.text.magnifyingglass") {
+                    appVM.selectedSidebarItem = .readingReport
                 }
             }
-            .frame(width: 180)
+            .frame(width: 176)
         }
     }
 
     private func quickAction(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon)
+                .font(.system(size: 13, weight: .medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .controlSize(.large)
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(palette.surfaceElevated.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(palette.borderSubtle, lineWidth: 0.8)
+        )
     }
 
     private var recentShelf: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("最近的书")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                 Spacer()
                 Button("全部书籍") {
                     appVM.selectedSidebarItem = .books
@@ -167,15 +187,16 @@ struct DashboardView: View {
     private func statCard(_ title: String, value: String, icon: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: 34, height: 34)
-                .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary.opacity(0.35)))
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(palette.textSecondary)
+                .frame(width: 30, height: 30)
+                .background(RoundedRectangle(cornerRadius: 6).fill(palette.textPrimary.opacity(0.045)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 20, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(palette.textTertiary)
             }
         }
         .padding(14)
@@ -215,7 +236,8 @@ private struct SyncStatusCard: View {
                     .buttonStyle(.bordered)
             }
         }
-        .padding(12)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
         .glassPanel()
     }
 
@@ -237,8 +259,10 @@ private struct SyncStatusCard: View {
 struct FeaturedNoteCard: View {
     let note: ReadingNote
 
+    @Environment(\.themePalette) private var palette
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 13) {
             HStack(spacing: 10) {
                 if let book = note.book {
                     BookCoverView(book: book, size: .small)
@@ -256,7 +280,7 @@ struct FeaturedNoteCard: View {
             }
 
             Text(note.highlight)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 17, weight: .medium))
                 .lineSpacing(5)
                 .lineLimit(6)
 
@@ -268,31 +292,72 @@ struct FeaturedNoteCard: View {
                     .lineLimit(3)
             }
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, minHeight: 230, alignment: .topLeading)
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 214, alignment: .topLeading)
         .glassPanel()
     }
 }
 
+// MARK: - LiveBadge：呼吸光点
+
+struct LiveBadge: View {
+    @Environment(\.themePalette) private var palette
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(palette.accent)
+                .frame(width: 6, height: 6)
+            Text("今日")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(palette.accent)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            Capsule().fill(palette.accent.opacity(0.12))
+        )
+    }
+}
+
 struct BookCoverView: View {
-    enum Size {
+    enum Size: Equatable {
         case small
         case medium
         case large
+        case custom(width: CGFloat, height: CGFloat)
 
         var width: CGFloat {
             switch self {
             case .small: return 36
             case .medium: return 48
             case .large: return 82
+            case .custom(let w, _): return w
             }
         }
 
-        var height: CGFloat { width * 1.36 }
+        var height: CGFloat {
+            switch self {
+            case .small, .medium, .large: return width * 1.36
+            case .custom(_, let h): return h
+            }
+        }
+
+        static func == (lhs: Size, rhs: Size) -> Bool {
+            lhs.width == rhs.width && lhs.height == rhs.height
+        }
+
+        /// 大尺寸 custom（>100 宽）—— 决定是否显示副标题
+        var sizeIsLargeCustom: Bool {
+            if case .custom(let w, _) = self, w > 100 { return true }
+            return false
+        }
     }
 
     let book: Book
     let size: Size
+
+    @Environment(\.themePalette) private var palette
 
     var body: some View {
         Group {
@@ -310,22 +375,31 @@ struct BookCoverView: View {
             }
         }
         .frame(width: size.width, height: size.height)
-        .clipShape(RoundedRectangle(cornerRadius: 5))
-        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.white.opacity(0.22), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: max(3, size.width * 0.05)))
+        .overlay(
+            RoundedRectangle(cornerRadius: max(3, size.width * 0.05))
+                .stroke(palette.borderMedium, lineWidth: 1)
+        )
     }
 
     private var fallback: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 5)
-                .fill(.ultraThinMaterial)
+            LinearGradient(
+                colors: [
+                    palette.surfaceElevated,
+                    palette.surface.opacity(0.6)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
             VStack(spacing: 2) {
                 Text(String(book.title.prefix(1)))
                     .font(.system(size: size.width * 0.38, weight: .bold, design: .serif))
-                    .foregroundStyle(.primary.opacity(0.6))
-                if size == .large {
+                    .foregroundStyle(palette.textPrimary.opacity(0.7))
+                if size == .large || size.sizeIsLargeCustom {
                     Text(book.title.count > 2 ? String(book.title.suffix(book.title.count - 2).prefix(2)) : "")
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: max(8, size.width * 0.11), weight: .medium))
+                        .foregroundStyle(palette.textSecondary)
                         .lineLimit(1)
                 }
             }

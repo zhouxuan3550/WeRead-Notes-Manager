@@ -5,6 +5,8 @@ import SwiftData
 struct SettingsView: View {
     @Environment(AppViewModel.self) private var appVM
     @AppStorage("skipDuplicates") private var skipDuplicates = true
+    @AppStorage("filterLowNoteBooksOnImport") private var filterLowNoteBooksOnImport = true
+    @AppStorage("minNotesPerImportedBook") private var minNotesPerImportedBook = 5
     @AppStorage("autoOpenAfterImport") private var autoOpenAfterImport = true
     @AppStorage("autoSyncOnLaunch") private var autoSyncOnLaunch = false
     @AppStorage("autoBackupEnabled") private var autoBackupEnabled = true
@@ -25,10 +27,12 @@ struct SettingsView: View {
     @State private var cloudSnapshotDate: Date? = ICloudSyncService.latestSnapshotDate()
     @State private var backupCount: Int = AutoBackupService.listBackups().count
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.themePalette) private var palette
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                appearanceSection
                 importSettingsSection
                 aiSettingsSection
                 exportSettingsSection
@@ -39,6 +43,30 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - 外观（主题）
+
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "paintbrush.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(palette.accent)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("外观")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("切换主题，主题立即生效")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ThemeSwitcher(store: ThemeStore.shared)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassPanel()
+    }
+
     // MARK: - 模块化设置区域
     
     private var importSettingsSection: some View {
@@ -46,7 +74,7 @@ struct SettingsView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "square.and.arrow.down")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(DesignSystem.Colors.primary)
+                    .foregroundStyle(palette.accent)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("导入与同步")
                         .font(.system(size: 15, weight: .semibold))
@@ -56,10 +84,19 @@ struct SettingsView: View {
                 }
             }
             
-            VStack(alignment: .leading, spacing: 12) {
-                Toggle("启动时自动同步微信读书", isOn: $autoSyncOnLaunch)
-                Toggle("导入时跳过重复笔记", isOn: $skipDuplicates)
-                Toggle("导入后自动打开书籍", isOn: $autoOpenAfterImport)
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("启动时自动同步微信读书", isOn: $autoSyncOnLaunch)
+                    Toggle("导入时跳过重复笔记", isOn: $skipDuplicates)
+                    Toggle("屏蔽少量笔记书籍", isOn: $filterLowNoteBooksOnImport)
+                    if filterLowNoteBooksOnImport {
+                        Stepper(
+                            "少于 \(minNotesPerImportedBook) 条笔记的书不导入，也不在书架显示",
+                            value: $minNotesPerImportedBook,
+                            in: 1...50
+                        )
+                        .font(.system(size: 13))
+                    }
+                    Toggle("导入后自动打开书籍", isOn: $autoOpenAfterImport)
                 
                 Divider().padding(.vertical, 4)
                 
@@ -97,7 +134,7 @@ struct SettingsView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "brain")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(DesignSystem.Colors.accent)
+                    .foregroundStyle(palette.accent)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("AI 配置")
                         .font(.system(size: 15, weight: .semibold))
@@ -115,8 +152,13 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 
-                ForEach(AIProvider.allCases) { provider in
-                    aiProviderPanel(provider)
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(Array(AIProvider.allCases.enumerated()), id: \.element) { index, provider in
+                        aiProviderPanel(provider)
+                        if index < AIProvider.allCases.count - 1 {
+                            Divider()
+                        }
+                    }
                 }
             }
             
@@ -131,18 +173,19 @@ struct SettingsView: View {
     }
     
     private func aiProviderPanel(_ provider: AIProvider) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(DesignSystem.Colors.primary.opacity(0.2))
-                    .frame(width: 24, height: 24)
+                    .fill(palette.accentSoft)
+                    .frame(width: 22, height: 22)
                     .overlay(
                         Text(String(provider.label.prefix(1)))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(palette.accent)
                     )
                 Text(provider.label)
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(palette.textPrimary)
             }
             
             SecureField(provider.keyPlaceholder, text: Binding(
@@ -154,7 +197,7 @@ struct SettingsView: View {
             HStack(spacing: 8) {
                 Text("模型")
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                 TextField(provider.defaultModel, text: modelBinding(for: provider))
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 160)
@@ -176,9 +219,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.bordered)
         }
-        .padding(12)
-        .background(DesignSystem.Colors.surface.opacity(0.5))
-        .cornerRadius(DesignSystem.CornerRadius.sm)
+        .padding(.vertical, 2)
     }
     
     private var exportSettingsSection: some View {
@@ -186,7 +227,7 @@ struct SettingsView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(DesignSystem.Colors.success)
+                    .foregroundStyle(palette.success)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("导出设置")
                         .font(.system(size: 15, weight: .semibold))

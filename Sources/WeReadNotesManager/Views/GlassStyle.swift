@@ -23,6 +23,7 @@ struct AppBackdrop: View {
 
 struct WorkbenchPanel<Content: View>: View {
     let content: Content
+    @Environment(\.themePalette) private var palette
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -31,7 +32,6 @@ struct WorkbenchPanel<Content: View>: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .premiumGlassPanel(cornerRadius: DesignSystem.CornerRadius.md, elevation: .lg)
-            .padding(10)
+            .background(palette.background)
     }
 }

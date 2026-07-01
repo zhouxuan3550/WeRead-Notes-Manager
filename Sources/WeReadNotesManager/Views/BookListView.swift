@@ -7,21 +7,27 @@ struct BookListView: View {
     @State private var showAddBook = false
     @State private var newBookTitle = ""
     @State private var newBookAuthor = ""
+    @AppStorage("filterLowNoteBooksOnImport") private var filterLowNoteBooksOnImport = true
+    @AppStorage("minNotesPerImportedBook") private var minNotesPerImportedBook = 5
 
     var body: some View {
+        let visibleBooks = appVM.filteredBooks(
+            filterLowNoteBooks: filterLowNoteBooksOnImport,
+            minNotesPerBook: minNotesPerImportedBook
+        )
         VStack(spacing: 0) {
-            toolbar
+            toolbar(visibleCount: visibleBooks.count)
             Divider()
-            if appVM.filteredBooks.isEmpty {
+            if visibleBooks.isEmpty {
                 ContentUnavailableView(
-                    "暂无书籍",
+                    emptyTitle,
                     systemImage: "books.vertical",
-                    description: Text("点击上方 + 添加书籍，或导入笔记文件")
+                    description: Text(emptyDescription)
                 )
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 14)], spacing: 18) {
-                        ForEach(appVM.filteredBooks) { book in
+                        ForEach(visibleBooks) { book in
                             Button {
                                 appVM.selectedBook = book
                                 appVM.selectedNote = nil
@@ -49,19 +55,22 @@ struct BookListView: View {
         Binding(
             get: { appVM.selectedBook?.id },
             set: { newID in
-                appVM.selectedBook = appVM.filteredBooks.first { $0.id == newID }
+                appVM.selectedBook = appVM.filteredBooks(
+                    filterLowNoteBooks: filterLowNoteBooksOnImport,
+                    minNotesPerBook: minNotesPerImportedBook
+                ).first { $0.id == newID }
                 appVM.selectedNote = nil
             }
         )
     }
 
-    private var toolbar: some View {
+    private func toolbar(visibleCount: Int) -> some View {
         let stats = appVM.libraryStats
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("书籍")
                     .font(.system(size: 15, weight: .semibold))
-                Text("\(stats.bookCount) 本书 · \(stats.noteCount) 条笔记")
+                Text(bookStatsText(stats: stats, visibleCount: visibleCount))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -75,6 +84,27 @@ struct BookListView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private var emptyTitle: String {
+        if filterLowNoteBooksOnImport, !appVM.books.isEmpty {
+            return "没有符合过滤规则的书籍"
+        }
+        return "暂无书籍"
+    }
+
+    private var emptyDescription: String {
+        if filterLowNoteBooksOnImport, !appVM.books.isEmpty {
+            return "当前隐藏了少于 \(minNotesPerImportedBook) 条笔记的书，可在设置里调整。"
+        }
+        return "点击上方 + 添加书籍，或导入笔记文件"
+    }
+
+    private func bookStatsText(stats: LibraryStats, visibleCount: Int) -> String {
+        if filterLowNoteBooksOnImport, visibleCount != stats.bookCount {
+            return "显示 \(visibleCount) / \(stats.bookCount) 本书 · \(stats.noteCount) 条笔记"
+        }
+        return "\(stats.bookCount) 本书 · \(stats.noteCount) 条笔记"
     }
 
     private var addBookSheet: some View {

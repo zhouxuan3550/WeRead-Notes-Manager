@@ -116,7 +116,7 @@ enum AutoBackupService {
         try context.save()
     }
 
-    private static func backupDirectoryURL() -> URL? {
+    static func backupDirectoryURL() -> URL? {
         let base = try? FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,

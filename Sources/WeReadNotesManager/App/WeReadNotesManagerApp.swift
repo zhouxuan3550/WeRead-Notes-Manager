@@ -21,8 +21,10 @@ struct WeReadNotesManagerApp: App {
         WindowGroup {
             MainView()
                 .frame(minWidth: 900, minHeight: 600)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(preferredColorScheme)
                 .background(WindowChromeApplier())
+                .environment(ThemeStore.shared)
+                .themePalette(ThemeStore.shared.palette)
         }
         .modelContainer(container)
         .windowStyle(.titleBar)
@@ -37,27 +39,34 @@ struct WeReadNotesManagerApp: App {
             }
         }
 
-        // 菜单栏常驻图标（Feature 7）
-        MenuBarExtra("书摘温故", systemImage: "books.vertical") {
-            Button("快速记录...") {
-                showQuickCapture()
-            }
-            .keyboardShortcut("n", modifiers: [.command, .shift])
-
-            Divider()
-
-            Button("显示主窗口") {
-                NSApp.activate(ignoringOtherApps: true)
-                for window in NSApp.windows where window.canBecomeMain {
-                    window.makeKeyAndOrderFront(nil)
-                }
-            }
-
-            Button("退出") {
-                NSApp.terminate(nil)
-            }
+        // 菜单栏常驻图标（Feature 7 + 升级）
+        MenuBarExtra {
+            MenuBarContent(
+                showQuickCapture: showQuickCapture,
+                showMainWindow: showMainWindow
+            )
+            .environment(ThemeStore.shared)
+            .themePalette(ThemeStore.shared.palette)
+        } label: {
+            // 智能图标：今日有 due 则显示数字角标
+            MenuBarLabel()
+                .environment(ThemeStore.shared)
+                .themePalette(ThemeStore.shared.palette)
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    private func showMainWindow() {
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows where window.canBecomeMain {
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    /// 把主题色映射到 SwiftUI 的 light/dark scheme。
+    /// Paper 主题用 light，其余用 dark。
+    private var preferredColorScheme: ColorScheme? {
+        ThemeStore.shared.current == .paper ? .light : .dark
     }
 
     /// 弹出 Quick Capture 窗口。

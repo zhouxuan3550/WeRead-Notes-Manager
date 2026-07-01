@@ -7,11 +7,15 @@ struct MainView: View {
     @State private var appVM = AppViewModel()
     @State private var showImport = false
     @State private var showExport = false
+    @State private var showOCR = false
     @State private var didAttemptAutoSync = false
     @State private var autoSyncTask: Task<Void, Never>?
     @State private var syncError: String?
     @AppStorage("autoSyncOnLaunch") private var autoSyncOnLaunch = false
     @AppStorage("iCloudSnapshotSyncEnabled") private var iCloudSnapshotSyncEnabled = false
+    @AppStorage("skipDuplicates") private var skipDuplicates = true
+    @AppStorage("filterLowNoteBooksOnImport") private var filterLowNoteBooksOnImport = true
+    @AppStorage("minNotesPerImportedBook") private var minNotesPerImportedBook = 5
 
     private var modelContainer: ModelContainer { modelContext.container }
 
@@ -24,7 +28,8 @@ struct MainView: View {
                 mainContent
             }
         }
-        .background(AppBackdrop())
+        .background(AmbientBackground(showGlows: true, showNoise: true, showDots: false))
+        .globalErrorBanner()
         .environment(appVM)
         .sheet(isPresented: $showImport) {
             ImportView()
@@ -35,6 +40,14 @@ struct MainView: View {
             ExportView()
                 .frame(width: 400, height: 320)
                 .environment(appVM)
+        }
+        .sheet(isPresented: $showOCR) {
+            OCRCaptureView()
+                .environment(appVM)
+                .environment(\.modelContext, modelContext)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .ocrCaptureRequested)) { _ in
+            showOCR = true
         }
         .alert("同步失败", isPresented: Binding(
             get: { syncError != nil },
@@ -65,9 +78,26 @@ struct MainView: View {
                 await BackgroundSyncService.shared.runOnce(container: container, context: context)
                 appVM.refreshBooks(context: context)
             }
+
+            // 启动 3 秒后做 Spotlight 全量索引（不阻塞首屏）
+            let books = appVM.books
+            Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await SpotlightService.indexAll(books: books)
+            }
+
+            // 启动 2 秒后推送 Widget 数据
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                syncWidgetData()
+            }
         }
         .onChange(of: books) { _, newBooks in
             appVM.updateBooks(newBooks)
+            // 增量同步 Spotlight
+            Task { await SpotlightService.indexAll(books: newBooks) }
+            // 同步 Widget 数据
+            syncWidgetData()
         }
         .background {
             Button("") { showImport = true }
@@ -130,8 +160,8 @@ struct MainView: View {
             ReviewView()
         case .randomNotes:
             RandomNoteView()
-        case .themeMap:
-            ThemeMapView()
+        case .mindMap:
+            MindMapView()
         case .readingReport:
             ReadingReportView()
         case .allNotes:
@@ -142,6 +172,8 @@ struct MainView: View {
             TagsView()
         case .askAI:
             CrossNoteAskView()
+        case .writingAssistant:
+            AIWritingAssistantView()
         case .trash:
             TrashView()
         case .syncHistory:
@@ -162,6 +194,26 @@ struct MainView: View {
         }
 
         performWeReadSync(apiKey: key, fileName: "启动自动同步", showError: false)
+    }
+
+    private func syncWidgetData() {
+        let dueCount = appVM.dueNotes.count
+        let totalCount = appVM.allNotes.count
+        let themeRaw = ThemeStore.shared.current.rawValue
+        let topNotes = appVM.dueNotes.prefix(5).map { note in
+            DueNotesEntry.WidgetNote(
+                id: note.id.uuidString,
+                bookTitle: note.book?.title ?? "未知",
+                highlight: String(note.highlight.prefix(80)),
+                chapter: note.chapter
+            )
+        }
+        WidgetDataStore.shared.update(
+            dueCount: dueCount,
+            totalCount: totalCount,
+            theme: themeRaw,
+            topNotes: topNotes
+        )
     }
 
     private func uploadICloudSnapshotIfNeeded() {
@@ -192,7 +244,11 @@ struct MainView: View {
         appVM.syncState.lastMessage = "正在连接微信读书..."
 
         autoSyncTask = Task {
-            let coordinator = ImportCoordinator(container: modelContainer)
+            let coordinator = ImportCoordinator(
+                container: modelContainer,
+                skipDuplicates: skipDuplicates,
+                minNotesPerBook: filterLowNoteBooksOnImport ? minNotesPerImportedBook : 0
+            )
             do {
                 let summary = try await coordinator.syncWeRead(apiKey: apiKey) { progress in
                     appVM.syncState.progress = progress

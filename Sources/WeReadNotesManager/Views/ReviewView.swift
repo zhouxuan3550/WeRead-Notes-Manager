@@ -21,9 +21,13 @@ struct ReviewView: View {
                 )
             } else if let current = notes[safe: currentIndex] {
                 VStack(spacing: 18) {
-                    ReviewFocusCard(note: current)
+                    // 3D 翻转闪卡
+                    FlipCardView(note: current, isFlipped: showAnswer)
                         .padding(.horizontal, 36)
                         .padding(.top, 28)
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.2)) { showAnswer.toggle() }
+                        }
 
                     if !showAnswer {
                         Button {
@@ -36,7 +40,7 @@ struct ReviewView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                     } else {
-                        // 4 档评级按钮（Feature 5 SRS）
+                        // 4 档评级按钮 - 带粒子动画
                         HStack(spacing: 12) {
                             gradeButton(.again, notes: notes)
                             gradeButton(.hard, notes: notes)
@@ -83,32 +87,16 @@ struct ReviewView: View {
     }
 
     private func gradeButton(_ grade: ReviewGrade, notes: [ReadingNote]) -> some View {
-        Button {
+        GradeButton(grade: grade) {
             guard let note = notes[safe: currentIndex] else { return }
             appVM.review(note, grade: grade, context: modelContext)
             showAnswer = false
             advance(notes: notes)
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: grade.systemImage)
-                    .font(.system(size: 18))
-                Text(grade.label)
-                    .font(.system(size: 12, weight: .medium))
-                if grade != .again {
-                    Text("+\(previewInterval(grade))天")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: 80)
-            .padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 10).fill(gradeColor(grade).opacity(0.15)))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(gradeColor(grade).opacity(0.5), lineWidth: 1))
         }
-        .buttonStyle(.plain)
     }
 
     private func gradeColor(_ grade: ReviewGrade) -> Color {
+        // 保留旧方法避免外部引用破坏，实际由 GradeButton 主题感知处理
         switch grade {
         case .again: return .red
         case .hard: return .orange

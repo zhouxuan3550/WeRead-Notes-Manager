@@ -1,11 +1,19 @@
 import Foundation
 
-struct ThemeCluster: Identifiable {
+struct ThemeCluster: Identifiable, Equatable, Hashable {
     let id: String
     let title: String
     let count: Int
     let books: [Book]
     let notes: [ReadingNote]
+
+    static func == (lhs: ThemeCluster, rhs: ThemeCluster) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 enum ReadingInsightService {
@@ -60,7 +68,7 @@ enum ReadingInsightService {
                 
                 return (keyword, notes, uniqueBooks, score)
             }
-            .filter { $0.1.count >= 3 } // 至少 3 条笔记才算主题
+            .filter { $0.1.count >= 2 } // 至少 2 条笔记才算主题
             .sorted { lhs, rhs in
                 if lhs.3 == rhs.3 { return lhs.0.count > rhs.0.count } // 词长优先
                 return lhs.3 > rhs.3
@@ -74,7 +82,6 @@ enum ReadingInsightService {
     static func keywords(in text: String) -> [String] {
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = keywordRegex.matches(in: text, range: range)
-        var result: Set<String> = []
         var allCandidates: [String] = []
 
         // 先收集所有可能的词
@@ -82,8 +89,11 @@ enum ReadingInsightService {
             guard let swiftRange = Range(match.range, in: text) else { continue }
             let run = String(text[swiftRange])
             let scalars = Array(run)
+            let isChineseRun = run.unicodeScalars.allSatisfy { (0x4E00...0x9FFF).contains(Int($0.value)) }
+            let minLen = isChineseRun ? 2 : 3
             let maxLen = min(6, scalars.count)
-            for length in 3...maxLen { // 优先 3 个字以上的词
+            guard maxLen >= minLen else { continue }
+            for length in minLen...maxLen {
                 for i in 0...(scalars.count - length) {
                     let substring = String(scalars[i..<(i + length)]).lowercased()
                     if !stopWords.contains(substring) {
@@ -111,16 +121,12 @@ enum ReadingInsightService {
             .map { $0.key }
             .prefix(20)
 
-        // 去重：如果一个词包含另一个词，只保留长的
-        var finalResult: Set<String> = []
-        for candidate in sortedCandidates {
-            let isSubstring = finalResult.contains { $0.contains(candidate) || candidate.contains($0) }
-            if !isSubstring {
-                finalResult.insert(candidate)
-            }
+        var seen: Set<String> = []
+        var result: [String] = []
+        for candidate in sortedCandidates where seen.insert(candidate).inserted {
+            result.append(candidate)
         }
-
-        return Array(finalResult)
+        return result
     }
 
     static func bookReport(for book: Book) -> BookReadingReport {

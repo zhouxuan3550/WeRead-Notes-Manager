@@ -33,7 +33,15 @@ final class BackgroundSyncService {
         }
         Self.logger.info("开始后台同步微信读书")
         do {
-            let coordinator = ImportCoordinator(container: container)
+            let defaults = UserDefaults.standard
+            let filterLowNoteBooks = defaults.object(forKey: "filterLowNoteBooksOnImport") as? Bool ?? true
+            let minNotesPerBook = defaults.object(forKey: "minNotesPerImportedBook") as? Int ?? 5
+            let skipDuplicates = defaults.object(forKey: "skipDuplicates") as? Bool ?? true
+            let coordinator = ImportCoordinator(
+                container: container,
+                skipDuplicates: skipDuplicates,
+                minNotesPerBook: filterLowNoteBooks ? minNotesPerBook : 0
+            )
             let summary = try await coordinator.syncWeRead(apiKey: key) { _ in
                 // 忽略进度更新（后台同步无 UI）
             }

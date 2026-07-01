@@ -98,6 +98,29 @@ struct BookNotesView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.bordered)
+
+                // 同步到外部工具
+                Menu {
+                    ForEach(ExternalSyncService.Destination.allCases) { dest in
+                        Button {
+                            ExternalSyncService.saveToFile(book: book, destination: dest)
+                        } label: {
+                            Label("导出为 \(dest.label)", systemImage: dest.systemImage)
+                        }
+                        Button {
+                            ExternalSyncService.copyToClipboard(book: book, destination: dest)
+                        } label: {
+                            Label("复制 \(dest.label) 格式", systemImage: "doc.on.doc")
+                        }
+                    }
+                } label: {
+                    Label("同步到外部", systemImage: "arrow.triangle.branch")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .menuStyle(.borderlessButton)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.3)))
             }
         }
         .padding(18)
@@ -161,14 +184,15 @@ struct BookNotesView: View {
                 ContentUnavailableView("本章没有摘录", systemImage: "note.text")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(selection: Binding(
-                    get: { selectedNote?.id },
-                    set: { id in selectedNote = filteredNotes.first { $0.id == id } }
-                )) {
-                    ForEach(filteredNotes) { note in
-                        BookReaderRow(note: note, isSelected: selectedNote?.id == note.id)
-                            .tag(note.id)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14))
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredNotes) { note in
+                            Button {
+                                selectedNote = note
+                            } label: {
+                                BookReaderRow(note: note, isSelected: selectedNote?.id == note.id)
+                            }
+                            .buttonStyle(.plain)
                             .contextMenu {
                                 Button("问 AI") { askAINote = note }
                                 Button(note.isFavorite ? "取消收藏" : "收藏") { appVM.toggleFavorite(note) }
@@ -177,10 +201,11 @@ struct BookNotesView: View {
                                     appVM.selectedBook = book
                                 }
                             }
+                        }
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
         }
     }
@@ -501,11 +526,11 @@ private struct BookReaderRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.white.opacity(0.12) : Color.white.opacity(0.045))
+                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.white.opacity(0.045))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(isSelected ? Color.accentColor.opacity(0.40) : Color.white.opacity(0.08), lineWidth: 1)
         )
     }
 }

@@ -14,6 +14,9 @@ struct ImportView: View {
     @State private var syncProgress: WeReadSyncProgress?
     @State private var syncTask: Task<Void, Never>?
     @AppStorage("autoSyncOnLaunch") private var autoSyncOnLaunch = false
+    @AppStorage("skipDuplicates") private var skipDuplicates = true
+    @AppStorage("filterLowNoteBooksOnImport") private var filterLowNoteBooksOnImport = true
+    @AppStorage("minNotesPerImportedBook") private var minNotesPerImportedBook = 5
 
     private var modelContainer: ModelContainer { modelContext.container }
 
@@ -40,6 +43,14 @@ struct ImportView: View {
                         icon: "doc.text",
                         buttonTitle: "选择文件",
                         kind: .general
+                    )
+
+                    importMethod(
+                        title: "OCR 拍书页",
+                        subtitle: "用 Vision 识别图片中的划线和想法",
+                        icon: "camera.viewfinder",
+                        buttonTitle: "识别图片",
+                        kind: .ocr
                     )
 
                     if let importResult {
@@ -236,6 +247,15 @@ struct ImportView: View {
     }
 
     private func chooseFile(_ kind: ImportKind) {
+        // OCR 类型走专门的视图
+        if kind == .ocr {
+            // 这里通过 NotificationCenter 触发，因为 ImportView 是 sheet 无法直接 present 另一个 sheet
+            // 由 MainView 监听后弹出 OCRCaptureView
+            NotificationCenter.default.post(name: .ocrCaptureRequested, object: nil)
+            dismiss()
+            return
+        }
+
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
@@ -324,7 +344,7 @@ struct ImportView: View {
 
         syncTask?.cancel()
         syncTask = Task {
-            let coordinator = ImportCoordinator(container: modelContainer)
+            let coordinator = makeImportCoordinator()
             do {
                 let summary = try await coordinator.syncWeRead(apiKey: key) { progress in
                     syncProgress = progress
@@ -339,7 +359,7 @@ struct ImportView: View {
                 )
                 appVM.refreshBooks(context: modelContext)
                 appVM.selectedSidebarItem = .books
-                appVM.selectedBook = appVM.books.sorted { ($0.lastImportedAt ?? $0.updatedAt) > ($1.lastImportedAt ?? $1.updatedAt) }.first
+                appVM.selectedBook = latestVisibleBook
                 appVM.selectedNote = nil
                 syncMessage = "同步完成。"
                 syncProgress = nil
@@ -389,7 +409,7 @@ struct ImportView: View {
         isImporting = true
         defer { isImporting = false }
 
-        let coordinator = ImportCoordinator(container: modelContainer)
+        let coordinator = makeImportCoordinator()
         do {
             let summary = try await coordinator.importFile(url)
             importResult = ImportResultSummary(
@@ -402,7 +422,7 @@ struct ImportView: View {
             )
             appVM.refreshBooks(context: modelContext)
             appVM.selectedSidebarItem = .books
-            appVM.selectedBook = appVM.books.sorted { ($0.lastImportedAt ?? $0.updatedAt) > ($1.lastImportedAt ?? $1.updatedAt) }.first
+            appVM.selectedBook = latestVisibleBook
             appVM.selectedNote = nil
         } catch {
             importResult = ImportResultSummary(
@@ -427,11 +447,29 @@ struct ImportView: View {
         }
         return ProcessInfo.processInfo.environment["WEREAD_API_KEY"] ?? ""
     }
+
+    private func makeImportCoordinator() -> ImportCoordinator {
+        ImportCoordinator(
+            container: modelContainer,
+            skipDuplicates: skipDuplicates,
+            minNotesPerBook: filterLowNoteBooksOnImport ? minNotesPerImportedBook : 0
+        )
+    }
+
+    private var latestVisibleBook: Book? {
+        appVM.filteredBooks(
+            filterLowNoteBooks: filterLowNoteBooksOnImport,
+            minNotesPerBook: minNotesPerImportedBook
+        )
+        .sorted { ($0.lastImportedAt ?? $0.updatedAt) > ($1.lastImportedAt ?? $1.updatedAt) }
+        .first
+    }
 }
 
 private enum ImportKind {
     case wereadText
     case general
+    case ocr
 
     var allowedContentTypes: [UTType] {
         switch self {
@@ -439,6 +477,8 @@ private enum ImportKind {
             return [.plainText]
         case .general:
             return [.plainText, UTType(filenameExtension: "md")!, UTType(filenameExtension: "markdown")!]
+        case .ocr:
+            return [.image]
         }
     }
 
@@ -448,6 +488,8 @@ private enum ImportKind {
             return "选择从微信读书复制或导出的 TXT 文件"
         case .general:
             return "选择 Markdown 或 TXT 笔记文件"
+        case .ocr:
+            return "选择书页图片，AI 会自动识别划线和想法"
         }
     }
 }

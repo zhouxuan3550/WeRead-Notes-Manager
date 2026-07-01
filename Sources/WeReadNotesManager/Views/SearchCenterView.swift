@@ -203,19 +203,10 @@ private struct HighlightedSnippet: View {
     let text: String
     let query: String
 
-    var body: some View {
-        Text(attributed)
-    }
+    @Environment(\.themePalette) private var palette
 
-    private var attributed: AttributedString {
-        var value = AttributedString(text)
-        let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty,
-              let range = value.range(of: cleaned, options: [.caseInsensitive]) else {
-            return value
-        }
-        value[range].backgroundColor = Color.accentColor.opacity(0.28)
-        value[range].foregroundColor = .primary
-        return value
+    var body: some View {
+        // 直接复用 HighlightedText 组件（多 token 高亮 + 主题感知）
+        HighlightedText(text: text, query: query, font: .system(size: 14))
     }
 }

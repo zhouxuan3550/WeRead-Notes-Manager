@@ -7,7 +7,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "WeReadNotesManager",
-            path: "Sources/WeReadNotesManager"
+            path: "Sources/WeReadNotesManager",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "WeReadNotesManagerTests",

@@ -59,18 +59,33 @@ actor NoteImportActor {
         fileName: String,
         fileType: String,
         sourceName: String,
-        skipDuplicates: Bool = true
+        skipDuplicates: Bool = true,
+        minNotesPerBook: Int = 0
     ) throws -> PersistedImportSummary {
         var booksCreated = 0
         var notesCreated = 0
         var duplicatesSkipped = 0
         let failedCount = result.failures.count
+        let bookNoteCounts = Self.bookNoteCounts(for: result.notes)
+        let allowedBookKeys = Set(bookNoteCounts.compactMap { key, count in
+            minNotesPerBook > 0 && count < minNotesPerBook ? nil : key
+        })
+        let skippedBookCount = minNotesPerBook > 0
+            ? bookNoteCounts.values.filter { $0 < minNotesPerBook }.count
+            : 0
+        let lowCountNotesSkipped = minNotesPerBook > 0
+            ? result.notes.filter { !allowedBookKeys.contains(bookKey(title: $0.bookTitle, author: $0.author)) }.count
+            : 0
 
         var existingHashes = getExistingHashes()
         var bookCache = buildBookCache()
 
         // 先把 result.books 里独立的书插入并入缓存
         for importedBook in result.books {
+            if minNotesPerBook > 0,
+               !allowedBookKeys.contains(bookKey(title: importedBook.title, author: importedBook.author)) {
+                continue
+            }
             let (_, created) = findOrCreateBook(
                 title: importedBook.title,
                 author: importedBook.author,
@@ -83,6 +98,11 @@ actor NoteImportActor {
         }
 
         for importedNote in result.notes {
+            if minNotesPerBook > 0,
+               !allowedBookKeys.contains(bookKey(title: importedNote.bookTitle, author: importedNote.author)) {
+                continue
+            }
+
             let hash = HashService.generateHash(
                 source: importedNote.source,
                 sourceID: importedNote.sourceID,
@@ -140,6 +160,9 @@ actor NoteImportActor {
             message: Self.makeDetail(
                 notesCreated: notesCreated,
                 duplicatesSkipped: duplicatesSkipped,
+                lowCountNotesSkipped: lowCountNotesSkipped,
+                skippedBookCount: skippedBookCount,
+                minNotesPerBook: minNotesPerBook,
                 failures: result.failures
             )
         )
@@ -197,10 +220,27 @@ actor NoteImportActor {
         "\(title.normalizedForHash())|\((author ?? "").normalizedForHash())"
     }
 
-    private static func makeDetail(notesCreated: Int, duplicatesSkipped: Int, failures: [ImportFailure]) -> String {
+    private static func bookNoteCounts(for notes: [ImportedNote]) -> [String: Int] {
+        Dictionary(grouping: notes) { note in
+            "\(note.bookTitle.normalizedForHash())|\((note.author ?? "").normalizedForHash())"
+        }
+        .mapValues(\.count)
+    }
+
+    private static func makeDetail(
+        notesCreated: Int,
+        duplicatesSkipped: Int,
+        lowCountNotesSkipped: Int,
+        skippedBookCount: Int,
+        minNotesPerBook: Int,
+        failures: [ImportFailure]
+    ) -> String {
         var detail = "成功导入 \(notesCreated) 条笔记"
         if duplicatesSkipped > 0 {
             detail += "，跳过 \(duplicatesSkipped) 条重复"
+        }
+        if minNotesPerBook > 0, lowCountNotesSkipped > 0 {
+            detail += "，屏蔽 \(skippedBookCount) 本少于 \(minNotesPerBook) 条笔记的书（\(lowCountNotesSkipped) 条笔记）"
         }
         if !failures.isEmpty {
             detail += "，\(failures.count) 条解析失败"
@@ -278,10 +318,12 @@ struct PersistedImportSummary: Sendable {
 struct ImportCoordinator {
     let container: ModelContainer
     let skipDuplicates: Bool
+    let minNotesPerBook: Int
 
-    init(container: ModelContainer, skipDuplicates: Bool = true) {
+    init(container: ModelContainer, skipDuplicates: Bool = true, minNotesPerBook: Int = 0) {
         self.container = container
         self.skipDuplicates = skipDuplicates
+        self.minNotesPerBook = minNotesPerBook
     }
 
     func importFile(_ url: URL) async throws -> PersistedImportSummary {
@@ -297,7 +339,8 @@ struct ImportCoordinator {
             fileName: url.lastPathComponent,
             fileType: ext,
             sourceName: sourceName,
-            skipDuplicates: skipDuplicates
+            skipDuplicates: skipDuplicates,
+            minNotesPerBook: minNotesPerBook
         )
     }
 
@@ -329,7 +372,8 @@ struct ImportCoordinator {
             fileName: "微信读书同步",
             fileType: "api",
             sourceName: "weread_skill",
-            skipDuplicates: skipDuplicates
+            skipDuplicates: skipDuplicates,
+            minNotesPerBook: minNotesPerBook
         )
     }
 }

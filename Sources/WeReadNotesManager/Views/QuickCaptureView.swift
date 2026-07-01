@@ -15,6 +15,9 @@ struct QuickCaptureView: View {
     @State private var savedFeedback: String?
     @Environment(\.dismiss) private var dismiss
 
+    // 订阅 Shortcuts 通知，把传入的内容预填
+    private let shortcutObserver = NotificationCenter.default.publisher(for: .quickCaptureRequested)
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -104,6 +107,12 @@ struct QuickCaptureView: View {
             .padding(14)
         }
         .frame(width: 440, height: 360)
+        .onReceive(shortcutObserver) { notification in
+            // Shortcuts / Siri 触发：预填内容
+            if let content = notification.userInfo?["content"] as? String, !content.isEmpty {
+                highlight = content
+            }
+        }
     }
 
     private var canSave: Bool {
