@@ -97,3 +97,7 @@ scripts/package_dmg.sh 1.0.10 x86_64
 当前版本是发布候选版。核心流程已经可以使用，但仍建议先备份重要笔记数据，再进行大规模导入。
 
 欢迎提交 issue，尤其是同步失败、导入异常、界面错位和崩溃日志。
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
