@@ -1,7 +1,8 @@
 # 书摘温故
 
 一款 macOS 微信读书笔记管理工具，支持微信读书 Skill 同步、书籍中心视图、复习、搜索、AI 问答、阅读报告、导出中心和 iCloud Drive 快照同步。
-![Uploading image.png…]()
+<img width="2352" height="1676" alt="1" src="https://github.com/user-attachments/assets/b342b7f4-fbd1-4849-a0d7-17fe67b28abd" />
+
 
 ## 主要功能
 
