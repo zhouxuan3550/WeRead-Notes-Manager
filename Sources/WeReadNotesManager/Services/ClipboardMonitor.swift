@@ -138,10 +138,10 @@ struct ClipboardBubbleView: View {
 
             HStack(spacing: 6) {
                 Button("忽略", action: onDismiss)
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                     .controlSize(.small)
                 Button(actionLabel, systemImage: "tray.and.arrow.down", action: primaryAction)
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
                     .controlSize(.small)
             }
         }

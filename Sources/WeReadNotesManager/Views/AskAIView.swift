@@ -4,10 +4,14 @@ import SwiftUI
 struct AskAIView: View {
     let note: ReadingNote
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.themePalette) private var palette
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.openAI.rawValue
     @AppStorage("openAIModel") private var openAIModel = AIProvider.openAI.defaultModel
     @AppStorage("deepSeekModel") private var deepSeekModel = AIProvider.deepSeek.defaultModel
     @AppStorage("glmModel") private var glmModel = AIProvider.glm.defaultModel
+    @AppStorage("minimaxModel") private var minimaxModel = AIProvider.minimax.defaultModel
+    @AppStorage("aliyunModel") private var aliyunModel = AIProvider.aliyun.defaultModel
+    @AppStorage("doubaoModel") private var doubaoModel = AIProvider.doubao.defaultModel
     @State private var provider: AIProvider = .openAI
     @State private var apiKey = ""
     @State private var question = "解释这条书摘的核心意思，并给我 3 个可以继续思考的问题。"
@@ -96,12 +100,7 @@ struct AskAIView: View {
             Text("AI 设置")
                 .font(.system(size: 13, weight: .semibold))
 
-            Picker("供应商", selection: $provider) {
-                ForEach(AIProvider.allCases) { provider in
-                    Text(provider.label).tag(provider)
-                }
-            }
-            .pickerStyle(.segmented)
+            providerSelector
             .disabled(isAsking)
 
             SecureField(provider.keyPlaceholder, text: $apiKey)
@@ -123,6 +122,7 @@ struct AskAIView: View {
                 } label: {
                     Label("粘贴 Key", systemImage: "doc.on.clipboard")
                 }
+                .flatActionButton(height: 30)
                 .disabled(isAsking)
 
                 Button {
@@ -130,11 +130,48 @@ struct AskAIView: View {
                 } label: {
                     Label("保存 Key", systemImage: "key")
                 }
+                .flatActionButton(height: 30)
                 .disabled(isAsking || cleanedAPIKey.isEmpty)
             }
         }
         .padding(14)
         .glassPanel()
+    }
+
+    private var providerSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(AIProvider.allCases.enumerated()), id: \.element) { index, item in
+                Button {
+                    provider = item
+                } label: {
+                    Text(item.label)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(provider == item ? palette.textPrimary : palette.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(provider == item ? palette.surfaceElevated.opacity(0.72) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+
+                if index < AIProvider.allCases.count - 1 {
+                    Rectangle()
+                        .fill(palette.borderSubtle)
+                        .frame(width: 0.8, height: 16)
+                }
+            }
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(palette.surface.opacity(0.58))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(palette.borderSubtle, lineWidth: 0.8)
+        )
     }
 
     private var questionPanel: some View {
@@ -161,7 +198,7 @@ struct AskAIView: View {
                 } label: {
                     Label(isAsking ? "思考中..." : "提问", systemImage: "paperplane")
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(isAsking || cleanedAPIKey.isEmpty || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
@@ -235,6 +272,9 @@ struct AskAIView: View {
         case .openAI: return openAIModel
         case .deepSeek: return deepSeekModel
         case .glm: return glmModel
+        case .minimax: return minimaxModel
+        case .aliyun: return aliyunModel
+        case .doubao: return doubaoModel
         }
     }
 
@@ -246,6 +286,9 @@ struct AskAIView: View {
                 case .openAI: openAIModel = value
                 case .deepSeek: deepSeekModel = value
                 case .glm: glmModel = value
+                case .minimax: minimaxModel = value
+                case .aliyun: aliyunModel = value
+                case .doubao: doubaoModel = value
                 }
             }
         )

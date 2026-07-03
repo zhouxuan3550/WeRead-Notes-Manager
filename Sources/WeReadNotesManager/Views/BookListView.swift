@@ -19,11 +19,22 @@ struct BookListView: View {
             toolbar(visibleCount: visibleBooks.count)
             Divider()
             if visibleBooks.isEmpty {
-                ContentUnavailableView(
-                    emptyTitle,
-                    systemImage: "books.vertical",
-                    description: Text(emptyDescription)
-                )
+                ContentUnavailableView {
+                    Label(emptyTitle, systemImage: "books.vertical")
+                } description: {
+                    Text(emptyDescription)
+                } actions: {
+                    HStack(spacing: 10) {
+                        Button("添加书籍") {
+                            showAddBook = true
+                        }
+                        .flatActionButton(.accent, height: 32)
+                        Button("调整过滤规则") {
+                            appVM.selectedSidebarItem = .settings
+                        }
+                        .flatActionButton(height: 32)
+                    }
+                }
             } else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 14)], spacing: 18) {
@@ -130,7 +141,7 @@ struct BookListView: View {
                     newBookTitle = ""
                     newBookAuthor = ""
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(newBookTitle.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -149,7 +160,7 @@ struct BookShelfCard: View {
         let thoughtCount = book.notes.lazy.filter { $0.userNote?.isEmpty == false }.count
         VStack(alignment: .leading, spacing: 9) {
             BookCoverView(book: book, size: .large)
-                .shadow(color: .black.opacity(isHovering ? 0.26 : 0.18), radius: isHovering ? 12 : 7, y: isHovering ? 7 : 4)
+                .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -172,7 +183,6 @@ struct BookShelfCard: View {
         }
         .padding(10)
         .glassPanel(isHighlighted: isSelected)
-        .scaleEffect(isHovering ? 1.025 : 1)
         .animation(.spring(response: 0.24, dampingFraction: 0.82), value: isHovering)
         .onHover { hovering in
             isHovering = hovering

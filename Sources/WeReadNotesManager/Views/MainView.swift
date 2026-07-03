@@ -8,10 +8,8 @@ struct MainView: View {
     @State private var showImport = false
     @State private var showExport = false
     @State private var showOCR = false
-    @State private var didAttemptAutoSync = false
     @State private var autoSyncTask: Task<Void, Never>?
     @State private var syncError: String?
-    @AppStorage("autoSyncOnLaunch") private var autoSyncOnLaunch = false
     @AppStorage("iCloudSnapshotSyncEnabled") private var iCloudSnapshotSyncEnabled = false
     @AppStorage("skipDuplicates") private var skipDuplicates = true
     @AppStorage("filterLowNoteBooksOnImport") private var filterLowNoteBooksOnImport = true
@@ -28,7 +26,7 @@ struct MainView: View {
                 mainContent
             }
         }
-        .background(AmbientBackground(showGlows: true, showNoise: true, showDots: false))
+        .background(AmbientBackground(showGlows: false, showNoise: false, showDots: false))
         .globalErrorBanner()
         .environment(appVM)
         .sheet(isPresented: $showImport) {
@@ -68,16 +66,6 @@ struct MainView: View {
             AutoBackupService.runIfNeeded(container: modelContainer)
             BackgroundSyncService.shared.install(container: modelContainer, context: modelContext)
             uploadICloudSnapshotIfNeeded()
-            startAutoSyncIfNeeded()
-
-            // 启动 5 秒后做一次后台同步（不影响首屏）
-            let container = modelContainer
-            let context = modelContext
-            Task {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                await BackgroundSyncService.shared.runOnce(container: container, context: context)
-                appVM.refreshBooks(context: context)
-            }
 
             // 启动 3 秒后做 Spotlight 全量索引（不阻塞首屏）
             let books = appVM.books
@@ -142,7 +130,7 @@ struct MainView: View {
         case .dashboard:
             DashboardView(
                 searchText: $bindable.searchText,
-                isAutoSyncEnabled: autoSyncOnLaunch,
+                isAutoSyncEnabled: false,
                 isSyncing: autoSyncTask != nil,
                 syncState: appVM.syncState,
                 onImport: { showImport = true },
@@ -170,10 +158,18 @@ struct MainView: View {
             NoteListView()
         case .tags:
             TagsView()
+        case .topicClusters:
+            TopicClustersView()
+        case .knowledgeGraph:
+            KnowledgeGraphView()
+        case .writingCards:
+            WritingCardsView()
         case .askAI:
             CrossNoteAskView()
         case .writingAssistant:
             AIWritingAssistantView()
+        case .shareCardStudio:
+            ShareCardStudioView()
         case .trash:
             TrashView()
         case .syncHistory:
@@ -181,19 +177,6 @@ struct MainView: View {
         case .none:
             ContentUnavailableView("选择左侧栏目", systemImage: "sidebar.left")
         }
-    }
-
-    private func startAutoSyncIfNeeded() {
-        guard autoSyncOnLaunch, !didAttemptAutoSync, autoSyncTask == nil else {
-            return
-        }
-        didAttemptAutoSync = true
-
-        guard let key = KeychainService.loadWeReadAPIKey(), !key.isEmpty else {
-            return
-        }
-
-        performWeReadSync(apiKey: key, fileName: "启动自动同步", showError: false)
     }
 
     private func syncWidgetData() {
@@ -226,8 +209,6 @@ struct MainView: View {
     }
 
     private func startToolbarSync() {
-        autoSyncOnLaunch = true
-
         guard let key = KeychainService.loadWeReadAPIKey(), !key.isEmpty else {
             showImport = true
             return
@@ -268,9 +249,9 @@ struct MainView: View {
                 autoSyncTask = nil
             } catch {
                 if showError {
-                    syncError = error.localizedDescription
+                    syncError = UserFacingError.message(for: error, context: "同步微信读书")
                 }
-                appVM.syncState.lastError = error.localizedDescription
+                appVM.syncState.lastError = UserFacingError.message(for: error, context: "同步微信读书")
                 appVM.syncState.lastMessage = "同步失败"
                 appVM.syncState.progress = nil
                 appVM.syncState.isSyncing = false

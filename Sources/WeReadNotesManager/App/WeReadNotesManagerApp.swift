@@ -11,7 +11,18 @@ struct WeReadNotesManagerApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Book.self, ReadingNote.self, ImportRecord.self, Tag.self, BookSummary.self)
+            container = try ModelContainer(
+                for: Book.self,
+                ReadingNote.self,
+                ImportRecord.self,
+                Tag.self,
+                BookSummary.self,
+                AIGeneratedResult.self,
+                TopicCluster.self,
+                WritingCard.self,
+                AIUsageRecord.self,
+                ShareCardPreset.self
+            )
         } catch {
             fatalError("Failed to initialize ModelContainer: \(error)")
         }

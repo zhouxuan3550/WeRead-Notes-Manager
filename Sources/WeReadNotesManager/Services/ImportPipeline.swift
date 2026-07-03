@@ -76,6 +76,9 @@ actor NoteImportActor {
         let lowCountNotesSkipped = minNotesPerBook > 0
             ? result.notes.filter { !allowedBookKeys.contains(bookKey(title: $0.bookTitle, author: $0.author)) }.count
             : 0
+        let skippedLowNoteBooks = minNotesPerBook > 0
+            ? Self.skippedLowNoteBooks(from: result.notes, counts: bookNoteCounts, minNotesPerBook: minNotesPerBook)
+            : []
 
         var existingHashes = getExistingHashes()
         var bookCache = buildBookCache()
@@ -170,6 +173,7 @@ actor NoteImportActor {
         try modelContext.save()
 
         return PersistedImportSummary(record)
+            .withSkippedLowNoteBooks(skippedLowNoteBooks)
     }
 
     private func getExistingHashes() -> Set<String> {
@@ -227,6 +231,26 @@ actor NoteImportActor {
         .mapValues(\.count)
     }
 
+    private static func skippedLowNoteBooks(
+        from notes: [ImportedNote],
+        counts: [String: Int],
+        minNotesPerBook: Int
+    ) -> [SkippedImportBook] {
+        var seen: Set<String> = []
+        return notes.compactMap { note in
+            let key = "\(note.bookTitle.normalizedForHash())|\((note.author ?? "").normalizedForHash())"
+            guard let count = counts[key], count < minNotesPerBook, !seen.contains(key) else {
+                return nil
+            }
+            seen.insert(key)
+            return SkippedImportBook(title: note.bookTitle, author: note.author, noteCount: count)
+        }
+        .sorted { lhs, rhs in
+            if lhs.noteCount != rhs.noteCount { return lhs.noteCount < rhs.noteCount }
+            return lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+        }
+    }
+
     private static func makeDetail(
         notesCreated: Int,
         duplicatesSkipped: Int,
@@ -270,6 +294,7 @@ struct PersistedImportSummary: Sendable {
     let duplicatesSkipped: Int
     let failedCount: Int
     let message: String
+    let skippedLowNoteBooks: [SkippedImportBook]
 
     init(
         fileName: String,
@@ -279,7 +304,8 @@ struct PersistedImportSummary: Sendable {
         notesCreated: Int,
         duplicatesSkipped: Int,
         failedCount: Int,
-        message: String
+        message: String,
+        skippedLowNoteBooks: [SkippedImportBook] = []
     ) {
         self.fileName = fileName
         self.fileType = fileType
@@ -289,6 +315,7 @@ struct PersistedImportSummary: Sendable {
         self.duplicatesSkipped = duplicatesSkipped
         self.failedCount = failedCount
         self.message = message
+        self.skippedLowNoteBooks = skippedLowNoteBooks
     }
 
     init(_ record: ImportRecord) {
@@ -300,8 +327,36 @@ struct PersistedImportSummary: Sendable {
             notesCreated: record.notesCreated,
             duplicatesSkipped: record.duplicatesSkipped,
             failedCount: record.failedCount,
-            message: record.message ?? "导入完成"
+            message: record.message ?? "导入完成",
+            skippedLowNoteBooks: []
         )
+    }
+
+    func withSkippedLowNoteBooks(_ books: [SkippedImportBook]) -> PersistedImportSummary {
+        PersistedImportSummary(
+            fileName: fileName,
+            fileType: fileType,
+            source: source,
+            booksCreated: booksCreated,
+            notesCreated: notesCreated,
+            duplicatesSkipped: duplicatesSkipped,
+            failedCount: failedCount,
+            message: message,
+            skippedLowNoteBooks: books
+        )
+    }
+}
+
+struct SkippedImportBook: Sendable, Equatable {
+    let title: String
+    let author: String?
+    let noteCount: Int
+
+    var displayName: String {
+        if let author, !author.isEmpty {
+            return "《\(title)》\(author) · \(noteCount) 条"
+        }
+        return "《\(title)》· \(noteCount) 条"
     }
 }
 

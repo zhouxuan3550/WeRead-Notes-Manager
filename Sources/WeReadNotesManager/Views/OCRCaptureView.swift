@@ -163,14 +163,14 @@ struct OCRCaptureView: View {
                 } label: {
                     Label("选择文件", systemImage: "photo.on.rectangle.angled")
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
 
                 Button {
                     pasteFromClipboard()
                 } label: {
                     Label("粘贴图片", systemImage: "doc.on.clipboard")
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
             }
 
             if let statusMessage {
@@ -263,7 +263,7 @@ struct OCRCaptureView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .disabled(selectedIDs.isEmpty || bookID == nil)
         }
         .padding(14)

@@ -5,8 +5,6 @@ struct HoverLift: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isHovering ? 1.018 : 1)
-            .shadow(color: Color.black.opacity(isHovering ? 0.16 : 0.08), radius: isHovering ? 14 : 8, x: 0, y: isHovering ? 8 : 4)
             .animation(DesignSystem.Animation.default, value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
@@ -46,9 +44,9 @@ struct CommandBar: View {
             .keyboardShortcut("e", modifiers: .command)
 
             CommandIconButton(
-                icon: isAutoSyncEnabled ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle",
-                title: isAutoSyncEnabled ? "立即同步" : "开启同步",
-                isActive: isAutoSyncEnabled,
+                icon: "arrow.triangle.2.circlepath",
+                title: "同步微信读书",
+                isActive: false,
                 isBusy: isSyncing,
                 action: onSync
             )
@@ -68,6 +66,7 @@ private struct CommandIconButton: View {
     var isActive = false
     var isBusy = false
     let action: () -> Void
+    @Environment(\.themePalette) private var palette
     @State private var isHovering = false
 
     var body: some View {
@@ -75,28 +74,27 @@ private struct CommandIconButton: View {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(isActive ? DesignSystem.Colors.primary : DesignSystem.Colors.textSecondary)
+                .foregroundStyle(isActive ? palette.accent : palette.textSecondary)
                 .rotationEffect(.degrees(isBusy ? 360 : 0))
                 .frame(width: 36, height: 36)
                 .background(
                     RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.xs, style: .continuous)
                         .fill(isActive 
-                            ? DesignSystem.Colors.primarySoft 
-                            : DesignSystem.Colors.surface.opacity(isHovering ? 0.9 : 0.6)
+                            ? palette.accentSoft.opacity(0.92)
+                            : palette.surfaceElevated.opacity(isHovering ? 1.0 : 0.92)
                         )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.xs, style: .continuous)
                         .stroke(isActive 
-                            ? DesignSystem.Colors.primary.opacity(0.4)
-                            : DesignSystem.Colors.borderSubtle,
-                            lineWidth: 1
+                            ? palette.accent.opacity(0.46)
+                            : palette.borderSubtle,
+                            lineWidth: 0.8
                         )
                 )
         }
         .buttonStyle(.plain)
         .help(title)
-        .scaleEffect(isHovering ? 1.06 : 1)
         .animation(DesignSystem.Animation.fast, value: isHovering)
         .animation(isBusy ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .default, value: isBusy)
         .onHover { hovering in
@@ -108,27 +106,37 @@ private struct CommandIconButton: View {
 private struct SearchField: View {
     @Binding var text: String
     let onCommit: () -> Void
+    @Environment(\.themePalette) private var palette
     @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: DesignSystem.Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(isFocused ? DesignSystem.Colors.primary : DesignSystem.Colors.textSecondary)
+                .foregroundStyle(isFocused ? palette.accent : palette.textSecondary)
 
-            TextField("搜索书名、作者、内容", text: $text)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .textPrimary()
-                .focused($isFocused)
-                .onSubmit(onCommit)
+            ZStack(alignment: .leading) {
+                if text.isEmpty {
+                    Text("搜索书名、作者、内容")
+                        .font(.body)
+                        .foregroundStyle(palette.textTertiary.opacity(0.86))
+                        .allowsHitTesting(false)
+                }
+
+                TextField("", text: $text)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .foregroundStyle(palette.textPrimary)
+                    .focused($isFocused)
+                    .onSubmit(onCommit)
+            }
 
             if !text.isEmpty {
                 Button {
                     text = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(DesignSystem.Colors.textTertiary)
+                        .foregroundStyle(palette.textTertiary)
                 }
                 .buttonStyle(.plain)
             }
@@ -138,16 +146,16 @@ private struct SearchField: View {
         .background(
             RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm, style: .continuous)
                 .fill(isFocused 
-                    ? DesignSystem.Colors.surfaceElevated.opacity(0.95)
-                    : DesignSystem.Colors.surface.opacity(0.7)
+                    ? palette.surfaceElevated.opacity(0.96)
+                    : palette.surfaceElevated.opacity(0.76)
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm, style: .continuous)
                 .stroke(isFocused 
-                    ? DesignSystem.Colors.primary.opacity(0.5)
-                    : DesignSystem.Colors.borderSubtle,
-                    lineWidth: 1
+                    ? palette.accent.opacity(0.46)
+                    : palette.borderSubtle,
+                    lineWidth: 0.8
                 )
         )
         .animation(DesignSystem.Animation.fast, value: isFocused)

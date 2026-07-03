@@ -149,13 +149,14 @@ struct TitleText: View {
 
 struct MicroLabel: View {
     let text: String
-    var color: Color = .secondary
+    var color: Color?
+    @Environment(\.themePalette) private var palette
 
     var body: some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold))
             .tracking(1.2)
-            .foregroundStyle(color)
+            .foregroundStyle(color ?? palette.textTertiary)
     }
 }
 

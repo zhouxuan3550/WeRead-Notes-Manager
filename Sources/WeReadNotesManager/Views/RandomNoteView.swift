@@ -50,14 +50,14 @@ struct RandomNoteView: View {
                                 Label(note.isFavorite ? "已收藏" : "收藏",
                                       systemImage: note.isFavorite ? "star.fill" : "star")
                             }
-                            .buttonStyle(.bordered)
+                            .flatActionButton(height: 32)
 
                             Button {
                                 appVM.markReviewed(note)
                             } label: {
                                 Label("已复习", systemImage: "checkmark.circle")
                             }
-                            .buttonStyle(.bordered)
+                            .flatActionButton(height: 32)
                         }
                     }
                     .padding(24)
@@ -87,7 +87,7 @@ struct RandomNoteView: View {
             } label: {
                 Label("换一条", systemImage: "shuffle")
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.small)
         }
         .padding(.horizontal, 20)

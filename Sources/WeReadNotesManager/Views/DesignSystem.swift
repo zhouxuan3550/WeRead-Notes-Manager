@@ -20,22 +20,22 @@ struct DesignSystem {
         static let xxxl: CGFloat = 48
     }
 
-    // MARK: - 圆角系统（保持不变）
+    // MARK: - 圆角系统
     struct CornerRadius {
         static let xs: CGFloat = 6
         static let sm: CGFloat = 8
-        static let md: CGFloat = 12
-        static let lg: CGFloat = 16
-        static let xl: CGFloat = 20
-        static let xxl: CGFloat = 24
+        static let md: CGFloat = 8
+        static let lg: CGFloat = 10
+        static let xl: CGFloat = 12
+        static let xxl: CGFloat = 14
     }
 
-    // MARK: - 阴影系统（保持不变）
+    // MARK: - 阴影系统
     struct Shadows {
-        static let sm = Shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
-        static let md = Shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
-        static let lg = Shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
-        static let xl = Shadow(color: .black.opacity(0.20), radius: 16, x: 0, y: 8)
+        static let sm = Shadow(color: .black.opacity(0.02), radius: 1, x: 0, y: 0)
+        static let md = Shadow(color: .black.opacity(0.03), radius: 2, x: 0, y: 1)
+        static let lg = Shadow(color: .black.opacity(0.04), radius: 3, x: 0, y: 1)
+        static let xl = Shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
 
     // MARK: - 动画系统（保持不变）
@@ -207,19 +207,12 @@ struct PremiumGlassPanel: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(isHighlighted ? palette.selectionBackground.opacity(0.72) : palette.surfaceElevated.opacity(0.78))
+                    .fill(isHighlighted ? palette.selectionBackground.opacity(0.46) : palette.surfaceElevated.opacity(0.94))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(isHighlighted ? palette.accent.opacity(0.38) : palette.borderSubtle, lineWidth: 0.8)
+                    .strokeBorder(isHighlighted ? palette.accent.opacity(0.42) : palette.borderSubtle, lineWidth: 0.8)
             )
-            .shadow(
-                color: Color.black.opacity(isHighlighted ? 0.12 : 0.08),
-                radius: isPressed ? 3 : 8,
-                x: 0,
-                y: isPressed ? 1 : 3
-            )
-            .scaleEffect(isPressed ? 0.998 : 1)
             .animation(DesignSystem.Animation.fast, value: isHighlighted)
             .animation(DesignSystem.Animation.fast, value: isPressed)
     }
@@ -319,8 +312,71 @@ struct PremiumButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm, style: .continuous)
                     .stroke(borderColor(isPressed: configuration.isPressed, isEnabled: isEnabled), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(DesignSystem.Animation.fast, value: configuration.isPressed)
+    }
+}
+
+// MARK: - 扁平操作按钮（主题感知）
+
+struct FlatActionButtonStyle: ButtonStyle {
+    @Environment(\.themePalette) private var palette
+    @Environment(\.isEnabled) private var isEnabled
+
+    var style: Style = .secondary
+    var height: CGFloat = 34
+
+    enum Style {
+        case secondary, accent, destructive
+    }
+
+    private func fillColor(isPressed: Bool) -> Color {
+        guard isEnabled else { return palette.surfaceElevated.opacity(0.38) }
+
+        switch style {
+        case .secondary:
+            return palette.surfaceElevated.opacity(isPressed ? 0.58 : 0.72)
+        case .accent:
+            return palette.accent.opacity(isPressed ? 0.78 : 0.9)
+        case .destructive:
+            return palette.error.opacity(isPressed ? 0.72 : 0.82)
+        }
+    }
+
+    private var foregroundColor: Color {
+        guard isEnabled else { return palette.textTertiary }
+        return style == .secondary ? palette.textPrimary : Color.white
+    }
+
+    private var borderColor: Color {
+        guard isEnabled else { return palette.borderSubtle.opacity(0.45) }
+
+        switch style {
+        case .secondary:
+            return palette.borderSubtle
+        case .accent:
+            return palette.accent.opacity(0.55)
+        case .destructive:
+            return palette.error.opacity(0.55)
+        }
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, 12)
+            .frame(height: height)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(fillColor(isPressed: configuration.isPressed))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(borderColor, lineWidth: 0.8)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .animation(DesignSystem.Animation.fast, value: configuration.isPressed)
+            .animation(DesignSystem.Animation.fast, value: isEnabled)
     }
 }
 
@@ -336,10 +392,9 @@ struct PremiumCard: ViewModifier {
         content
             .modifier(PremiumGlassPanel(
                 cornerRadius: cornerRadius,
-                elevation: isHovering ? .lg : .md,
+                elevation: .sm,
                 isHighlighted: isHovering
             ))
-            .scaleEffect(isHovering ? 1.01 : 1)
             .animation(DesignSystem.Animation.default, value: isHovering)
             .onHover { hovering in
                 if isHoverable {
@@ -492,6 +547,13 @@ extension View {
         size: PremiumButtonStyle.Size = .md
     ) -> some View {
         buttonStyle(PremiumButtonStyle(style: style, size: size))
+    }
+
+    func flatActionButton(
+        _ style: FlatActionButtonStyle.Style = .secondary,
+        height: CGFloat = 34
+    ) -> some View {
+        buttonStyle(FlatActionButtonStyle(style: style, height: height))
     }
 }
 

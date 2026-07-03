@@ -229,7 +229,7 @@ struct DataHealthCheckView: View {
                     Label("开始扫描", systemImage: "magnifyingglass")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .disabled(isScanning)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -266,7 +266,7 @@ struct DataHealthCheckView: View {
                 } label: {
                     Label("重新扫描", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .frame(maxWidth: .infinity)
             }
             .padding(16)

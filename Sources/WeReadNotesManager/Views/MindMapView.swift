@@ -89,7 +89,7 @@ struct MindMapView: View {
                 } label: {
                     Label("AI 生成", systemImage: "wand.and.stars")
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(appVM.allNotes.isEmpty)
 
                 if generatedTree != nil {
@@ -143,7 +143,7 @@ struct MindMapView: View {
                     .font(.callout)
                     .multilineTextAlignment(.center)
                 Button("重试") { Task { await generate() } }
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -300,6 +300,7 @@ struct MindMapView: View {
         case .openAI: return openAIModel
         case .deepSeek: return deepSeekModel
         case .glm: return glmModel
+        case .minimax, .aliyun, .doubao: return currentProvider.savedModel
         }
     }
 

@@ -37,7 +37,7 @@ struct ReviewView: View {
                                 .padding(.horizontal, 24)
                                 .padding(.vertical, 10)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .flatActionButton(.accent, height: 32)
                         .controlSize(.large)
                     } else {
                         // 4 档评级按钮 - 带粒子动画

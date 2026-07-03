@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchCenterView: View {
     @Environment(AppViewModel.self) private var appVM
+    @Environment(\.themePalette) private var palette
     @State private var selectedBookID: UUID?
     @State private var selectedChapter = "全部"
     @State private var onlyThoughts = false
@@ -14,11 +15,27 @@ struct SearchCenterView: View {
             Divider().opacity(0.35)
 
             if results.isEmpty {
-                ContentUnavailableView(
-                    appVM.searchText.isEmpty ? "输入关键词开始搜索" : "没有匹配结果",
-                    systemImage: "magnifyingglass",
-                    description: Text(appVM.searchText.isEmpty ? "可以搜索书名、作者、章节、划线和想法" : "试试减少筛选条件")
-                )
+                ContentUnavailableView {
+                    Label(appVM.searchText.isEmpty ? "输入关键词开始搜索" : "没有匹配结果", systemImage: "magnifyingglass")
+                } description: {
+                    Text(appVM.searchText.isEmpty ? "可以搜索书名、作者、章节、划线和想法" : "试试减少筛选条件")
+                } actions: {
+                    if !appVM.searchText.isEmpty || selectedBookID != nil || selectedChapter != "全部" || onlyThoughts || onlyFavorites {
+                        Button("清除筛选") {
+                            appVM.searchText = ""
+                            selectedBookID = nil
+                            selectedChapter = "全部"
+                            onlyThoughts = false
+                            onlyFavorites = false
+                        }
+                        .flatActionButton(.accent, height: 32)
+                    } else {
+                        Button("打开书架") {
+                            appVM.selectedSidebarItem = .books
+                        }
+                        .flatActionButton(.accent, height: 32)
+                    }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
@@ -83,8 +100,8 @@ struct SearchCenterView: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 40)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.055)))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.10), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 8).fill(palette.surfaceElevated.opacity(0.76)))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(palette.borderSubtle, lineWidth: 0.8))
 
             HStack(spacing: 10) {
                 Picker("书籍", selection: $selectedBookID) {
@@ -118,7 +135,7 @@ struct SearchCenterView: View {
                     onlyThoughts = false
                     onlyFavorites = false
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 30)
             }
             .font(.system(size: 12))
         }

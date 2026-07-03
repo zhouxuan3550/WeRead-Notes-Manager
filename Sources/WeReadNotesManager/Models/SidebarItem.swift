@@ -11,8 +11,12 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
     case unreviewed
     case books
     case tags
+    case topicClusters
+    case knowledgeGraph
+    case writingCards
     case askAI
     case writingAssistant
+    case shareCardStudio
     case trash
     case syncHistory
     case settings
@@ -31,8 +35,12 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
         case .unreviewed: return "未复习"
         case .books: return "书籍"
         case .tags: return "标签"
-        case .askAI: return "问 AI"
+        case .topicClusters: return "主题聚类"
+        case .knowledgeGraph: return "知识图谱"
+        case .writingCards: return "素材卡"
+        case .askAI: return "AI 工作台"
         case .writingAssistant: return "AI 写作"
+        case .shareCardStudio: return "卡片工厂"
         case .trash: return "回收站"
         case .syncHistory: return "同步历史"
         case .settings: return "设置"
@@ -51,11 +59,15 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
         case .unreviewed: return "eye.slash"
         case .books: return "books.vertical"
         case .tags: return "tag"
+        case .topicClusters: return "circle.grid.2x2"
+        case .knowledgeGraph: return "network"
+        case .writingCards: return "rectangle.stack"
         case .askAI: return "sparkles"
         case .writingAssistant: return "wand.and.stars"
+        case .shareCardStudio: return "photo.artframe"
         case .trash: return "trash"
         case .syncHistory: return "clock.arrow.circlepath"
-        case .settings: return "gearshape"
+        case .settings: return "gearshape.fill"
         }
     }
 }

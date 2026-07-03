@@ -239,35 +239,35 @@ struct PomodoroWidget: View {
                         Label("开始", systemImage: "play.fill")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
                 case .running:
                     Button {
                         timer.pause()
                     } label: {
                         Label("暂停", systemImage: "pause.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
 
                     Button {
                         timer.stop()
                     } label: {
                         Label("停止", systemImage: "stop.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 case .paused:
                     Button {
                         timer.resume()
                     } label: {
                         Label("继续", systemImage: "play.fill")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
 
                     Button {
                         timer.stop()
                     } label: {
                         Label("停止", systemImage: "stop.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 }
             }
 
@@ -279,7 +279,7 @@ struct PomodoroWidget: View {
                             customMinutes = "\(mins)"
                             timer.start(workMinutes: mins)
                         }
-                        .buttonStyle(.bordered)
+                        .flatActionButton(height: 32)
                         .controlSize(.small)
                     }
                 }

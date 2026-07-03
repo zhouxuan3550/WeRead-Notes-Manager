@@ -7,6 +7,9 @@ enum KeychainService {
     private static let openAIAccount = "openAIAPIKey"
     private static let deepSeekAccount = "deepSeekAPIKey"
     private static let glmAccount = "glmAPIKey"
+    private static let minimaxAccount = "minimaxAPIKey"
+    private static let aliyunAccount = "aliyunAPIKey"
+    private static let doubaoAccount = "doubaoAPIKey"
     private static let fallbackPrefix = "localAPIKeyFallback."
 
     static func loadWeReadAPIKey() -> String? {
@@ -50,6 +53,9 @@ enum KeychainService {
         case .openAI: return openAIAccount
         case .deepSeek: return deepSeekAccount
         case .glm: return glmAccount
+        case .minimax: return minimaxAccount
+        case .aliyun: return aliyunAccount
+        case .doubao: return doubaoAccount
         }
     }
 

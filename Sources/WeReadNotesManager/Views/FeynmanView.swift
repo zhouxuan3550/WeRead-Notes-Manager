@@ -158,7 +158,7 @@ struct FeynmanView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(selectedNoteIDs.isEmpty)
                 .padding(.top, 8)
             }
@@ -598,21 +598,21 @@ struct FeynmanView: View {
                     self.session?.questions[self.session?.currentIndex ?? 0].isCorrect = false
                     advanceOrFinish()
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Spacer()
 
                 Button("提交答案") {
                     submit(question: question, session: session)
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(!hasAnswer(question: question))
             } else {
                 Spacer()
                 Button(session.currentIndex == session.questions.count - 1 ? "完成" : "下一题") {
                     advanceOrFinish()
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
             }
         }
         .padding(16)
@@ -736,7 +736,7 @@ struct FeynmanView: View {
                                 Label("再来一组", systemImage: "arrow.clockwise")
                                     .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.bordered)
+                            .flatActionButton(height: 32)
 
                             Button {
                                 dismiss()
@@ -744,7 +744,7 @@ struct FeynmanView: View {
                                 Label("完成", systemImage: "checkmark")
                                     .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.borderedProminent)
+                            .flatActionButton(.accent, height: 32)
                         }
                     }
                     .padding(24)

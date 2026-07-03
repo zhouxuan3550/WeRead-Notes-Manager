@@ -117,7 +117,8 @@ final class AppViewModel {
                 case .books:
                     base = selectedBook?.notes ?? allNotes
                 case .dashboard, .mindMap, .readingReport, .syncHistory, .settings,
-                     .tags, .askAI, .writingAssistant, .trash, .none:
+                     .tags, .topicClusters, .knowledgeGraph, .writingCards, .shareCardStudio,
+                     .askAI, .writingAssistant, .trash, .none:
                     base = []
                 }
                 return sortNotes(applyKindFilter(applySearch(base)))
@@ -404,6 +405,7 @@ final class AppViewModel {
             note.updatedAt = Date()
         }
         SafePersistence.save(context, label: "batchReviewed")
+        invalidateAllCaches()
     }
 
     func batchAddTag(_ tag: Tag, to notes: [ReadingNote], context: ModelContext) {
@@ -562,10 +564,7 @@ final class AppViewModel {
 
     /// 笔记级别失效：数量/统计/推荐排序变；search index 不变（文本不变）。
     private func invalidateNotesCaches() {
-        booksVersion &+= 1
-        booksVersion &+= 1
-        booksVersion &+= 1
-        booksVersion &+= 1
+        invalidateAllCaches()
     }
 
     private func computeStats(from books: [Book]) -> LibraryStats {

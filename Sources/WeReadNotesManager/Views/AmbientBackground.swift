@@ -211,33 +211,10 @@ struct GlassPanelV2: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(palette.surfaceElevated.opacity(0.85))
+            .fill(palette.surfaceElevated.opacity(0.82))
             .overlay(
-                // 内描边（高光线）
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                palette.textPrimary.opacity(0.10),
-                                palette.textPrimary.opacity(0.02)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.5
-                    )
-            )
-            .overlay(
-                // 外描边（可选）
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(borderColor ?? Color.clear, lineWidth: borderColor != nil ? 1 : 0)
-            )
-            .background(
-                // 双层阴影（更立体）
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.clear)
-                    .shadow(color: .black.opacity(elevation.shadowOpacity), radius: elevation.shadowRadius, y: elevation.shadowRadius / 2)
-                    .shadow(color: palette.accent.opacity(0.05), radius: elevation.shadowRadius * 2)
+                    .stroke(borderColor ?? palette.borderSubtle, lineWidth: 0.8)
             )
     }
 }

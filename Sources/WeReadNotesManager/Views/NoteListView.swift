@@ -4,6 +4,7 @@ import SwiftData
 struct NoteListView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.themePalette) private var palette
     @State private var showAddNote = false
     @State private var isMultiSelectMode: Bool = false
     @State private var selectedIDs: Set<UUID> = []
@@ -24,10 +25,17 @@ struct NoteListView: View {
             }
 
             if notes.isEmpty {
-                ContentUnavailableView(
-                    emptyTitle,
+                EmptyStateView(
+                    title: emptyTitle,
+                    subtitle: emptyDescription,
                     systemImage: emptyIcon,
-                    description: Text(emptyDescription)
+                    action: appVM.searchText.isEmpty
+                        ? EmptyStateView.Action(title: "打开书架", systemImage: "books.vertical") {
+                            appVM.selectedSidebarItem = .books
+                        }
+                        : EmptyStateView.Action(title: "清空搜索", systemImage: "xmark.circle") {
+                            appVM.searchText = ""
+                        }
                 )
             } else {
                 List(selection: isMultiSelectMode ? $selectedIDs : .constant(Set<UUID>())) {
@@ -99,9 +107,10 @@ struct NoteListView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(sectionTitle) (\(noteCount))")
                         .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(palette.textPrimary)
                     Text(toolbarSubtitle)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textSecondary)
                 }
                 Spacer()
                 Picker("类型", selection: Binding(
@@ -148,7 +157,7 @@ struct NoteListView: View {
                 HStack(spacing: 9) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textTertiary)
                     TextField("搜索书名、作者、章节、划线或想法", text: Binding(
                         get: { appVM.searchText },
                         set: { appVM.searchText = $0 }
@@ -161,13 +170,13 @@ struct NoteListView: View {
                             Image(systemName: "xmark.circle.fill")
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textTertiary)
                     }
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 38)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.05)))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(palette.surface))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(palette.borderSubtle, lineWidth: 1))
             }
         }
         .padding(.horizontal, 16)
@@ -195,6 +204,7 @@ struct NoteListView: View {
 
 struct NoteRow: View {
     let note: ReadingNote
+    @Environment(\.themePalette) private var palette
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -214,12 +224,12 @@ struct NoteRow: View {
                     if note.isFavorite {
                         Image(systemName: "star.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(.yellow)
+                            .foregroundStyle(palette.accent)
                     }
                     if note.isReviewed {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(palette.success)
                     }
                 }
             }
@@ -243,6 +253,7 @@ struct AddNoteSheet: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.themePalette) private var palette
 
     @State private var highlight = ""
     @State private var userNote = ""
@@ -253,26 +264,26 @@ struct AddNoteSheet: View {
         VStack(spacing: 16) {
             Text("添加笔记 — \(book.title)")
                 .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(palette.textPrimary)
             TextField("章节（可选）", text: $chapter)
                 .textFieldStyle(.roundedBorder)
             VStack(alignment: .leading, spacing: 4) {
                 Text("划线内容")
                     .font(.system(size: 13, weight: .medium))
-                TextEditor(text: $highlight)
-                    .frame(minHeight: 80)
-                    .border(.quaternary, width: 1)
+                    .foregroundStyle(palette.textSecondary)
+                ThemedTextEditor(text: $highlight, minHeight: 80)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("我的想法（可选）")
                     .font(.system(size: 13, weight: .medium))
-                TextEditor(text: $userNote)
-                    .frame(minHeight: 60)
-                    .border(.quaternary, width: 1)
+                    .foregroundStyle(palette.textSecondary)
+                ThemedTextEditor(text: $userNote, minHeight: 60)
             }
             TextField("位置 / 页码（可选）", text: $location)
                 .textFieldStyle(.roundedBorder)
             HStack {
                 Button("取消") { dismiss() }
+                    .foregroundStyle(palette.textSecondary)
                 Spacer()
                 Button("添加") {
                     let ch = chapter.trimmingCharacters(in: .whitespaces)
@@ -288,11 +299,32 @@ struct AddNoteSheet: View {
                     )
                     dismiss()
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(.accent, height: 32)
                 .disabled(highlight.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(24)
         .frame(width: 440, height: 420)
+        .background(palette.background)
+    }
+
+    private struct ThemedTextEditor: View {
+        @Binding var text: String
+        var minHeight: CGFloat
+        @Environment(\.themePalette) private var palette
+
+        var body: some View {
+            TextEditor(text: $text)
+                .font(.system(size: 14))
+                .foregroundStyle(palette.textPrimary)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: minHeight)
+                .padding(4)
+                .background(palette.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(palette.borderMedium, lineWidth: 1)
+                )
+        }
     }
 }

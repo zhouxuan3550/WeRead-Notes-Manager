@@ -66,7 +66,7 @@ struct TrashView: View {
                 Button("清空回收站", role: .destructive) {
                     showEmptyAllConfirm = true
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
             }
         }
         .padding(.horizontal, 20)

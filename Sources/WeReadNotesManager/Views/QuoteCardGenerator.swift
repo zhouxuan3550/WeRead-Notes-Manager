@@ -661,7 +661,7 @@ struct QuoteCardGeneratorView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.large)
             .disabled(isGenerating)
             .padding(16)
@@ -673,7 +673,7 @@ struct QuoteCardGeneratorView: View {
                     Label("保存 PNG", systemImage: "square.and.arrow.down")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .padding(.horizontal, 16)
 
                 Button {
@@ -682,7 +682,7 @@ struct QuoteCardGeneratorView: View {
                     Label("复制", systemImage: "doc.on.doc")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }

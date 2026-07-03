@@ -16,6 +16,9 @@ struct SettingsView: View {
     @AppStorage("openAIModel") private var openAIModel = AIProvider.openAI.defaultModel
     @AppStorage("deepSeekModel") private var deepSeekModel = AIProvider.deepSeek.defaultModel
     @AppStorage("glmModel") private var glmModel = AIProvider.glm.defaultModel
+    @AppStorage("minimaxModel") private var minimaxModel = AIProvider.minimax.defaultModel
+    @AppStorage("aliyunModel") private var aliyunModel = AIProvider.aliyun.defaultModel
+    @AppStorage("doubaoModel") private var doubaoModel = AIProvider.doubao.defaultModel
     @State private var weReadAPIKey = KeychainService.loadWeReadAPIKey() ?? ""
     @State private var aiKeys: [AIProvider: String] = Dictionary(
         uniqueKeysWithValues: AIProvider.allCases.map { ($0, KeychainService.loadAPIKey(for: $0) ?? "") }
@@ -24,6 +27,9 @@ struct SettingsView: View {
     @State private var dataActionMessage: String?
     @State private var cloudSyncMessage: String?
     @State private var isCloudSyncing = false
+    @State private var isCheckingUpdate = false
+    @State private var updateStatusMessage: String?
+    @State private var latestReleaseURL: URL?
     @State private var cloudSnapshotDate: Date? = ICloudSyncService.latestSnapshotDate()
     @State private var backupCount: Int = AutoBackupService.listBackups().count
     @Environment(\.modelContext) private var modelContext
@@ -32,12 +38,13 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                appearanceSection
                 importSettingsSection
-                aiSettingsSection
-                exportSettingsSection
                 cloudSyncSection
+                aiSettingsSection
+                appearanceSection
+                exportSettingsSection
                 dataManagementSection
+                aboutUpdateSection
             }
             .padding(24)
         }
@@ -85,16 +92,16 @@ struct SettingsView: View {
             }
             
                 VStack(alignment: .leading, spacing: 12) {
-                    Toggle("启动时自动同步微信读书", isOn: $autoSyncOnLaunch)
                     Toggle("导入时跳过重复笔记", isOn: $skipDuplicates)
                     Toggle("屏蔽少量笔记书籍", isOn: $filterLowNoteBooksOnImport)
                     if filterLowNoteBooksOnImport {
-                        Stepper(
-                            "少于 \(minNotesPerImportedBook) 条笔记的书不导入，也不在书架显示",
-                            value: $minNotesPerImportedBook,
-                            in: 1...50
-                        )
-                        .font(.system(size: 13))
+                        HStack(spacing: 8) {
+                            Stepper("", value: $minNotesPerImportedBook, in: 1...50)
+                                .labelsHidden()
+                                .frame(width: 28)
+                            Text("少于 \(minNotesPerImportedBook) 条笔记的书不导入，也不在书架显示")
+                                .font(.system(size: 13))
+                        }
                     }
                     Toggle("导入后自动打开书籍", isOn: $autoOpenAfterImport)
                 
@@ -121,7 +128,7 @@ struct SettingsView: View {
                             clearWeReadKey()
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
                 }
             }
         }
@@ -145,21 +152,9 @@ struct SettingsView: View {
             }
             
             VStack(alignment: .leading, spacing: 12) {
-                Picker("默认供应商", selection: $aiProviderRaw) {
-                    ForEach(AIProvider.allCases) { provider in
-                        Text(provider.label).tag(provider.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
+                aiProviderSelector
                 
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(Array(AIProvider.allCases.enumerated()), id: \.element) { index, provider in
-                        aiProviderPanel(provider)
-                        if index < AIProvider.allCases.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
+                aiProviderPanel(selectedAIProvider)
             }
             
             if let settingsMessage {
@@ -217,9 +212,47 @@ struct SettingsView: View {
                     clearAIKey(for: provider)
                 }
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 30)
         }
         .padding(.vertical, 2)
+    }
+
+    private var selectedAIProvider: AIProvider {
+        AIProvider(rawValue: aiProviderRaw) ?? .openAI
+    }
+
+    private var aiProviderSelector: some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3),
+            spacing: 2
+        ) {
+            ForEach(AIProvider.allCases) { provider in
+                Button {
+                    aiProviderRaw = provider.rawValue
+                    settingsMessage = nil
+                } label: {
+                    Text(provider.label)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(aiProviderRaw == provider.rawValue ? palette.textPrimary : palette.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(aiProviderRaw == provider.rawValue ? palette.surfaceElevated.opacity(0.72) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(palette.surface.opacity(0.58))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(palette.borderSubtle, lineWidth: 0.8)
+        )
     }
     
     private var exportSettingsSection: some View {
@@ -241,13 +274,32 @@ struct SettingsView: View {
                 Text("默认导出格式")
                     .font(.system(size: 13))
                 Spacer()
-                Picker("", selection: $defaultExportFormat) {
-                    Text("Markdown").tag("Markdown")
-                    Text("TXT").tag("TXT")
-                    Text("PDF").tag("PDF")
+                Menu {
+                    ForEach(["Markdown", "TXT", "PDF"], id: \.self) { format in
+                        Button(format) {
+                            defaultExportFormat = format
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(defaultExportFormat)
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(palette.textSecondary)
+                    }
+                    .foregroundStyle(palette.textPrimary)
+                    .frame(width: 120, height: 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(palette.surfaceElevated.opacity(0.72))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .stroke(palette.borderSubtle, lineWidth: 0.8)
+                    )
                 }
-                .pickerStyle(.menu)
-                .frame(width: 120)
+                .buttonStyle(.plain)
             }
         }
         .padding(16)
@@ -278,28 +330,28 @@ struct SettingsView: View {
                 Toggle("启动时自动上传快照", isOn: $iCloudSnapshotSyncEnabled)
                 
                 HStack(spacing: 10) {
-                    Button {
-                        uploadToICloud()
-                    } label: {
-                        Label("上传", systemImage: "icloud.and.arrow.up")
-                    }
-                    .buttonStyle(.borderedProminent)
+                Button {
+                    uploadToICloud()
+                } label: {
+                    Label("上传", systemImage: "icloud.and.arrow.up")
+                }
+                    .flatActionButton(.accent, height: 30)
                     .disabled(isCloudSyncing || appVM.allNotes.isEmpty)
                     
-                    Button {
-                        downloadFromICloud()
-                    } label: {
-                        Label("拉取", systemImage: "icloud.and.arrow.down")
-                    }
-                    .buttonStyle(.bordered)
+                Button {
+                    downloadFromICloud()
+                } label: {
+                    Label("拉取", systemImage: "icloud.and.arrow.down")
+                }
+                    .flatActionButton(height: 30)
                     .disabled(isCloudSyncing)
                     
-                    Button {
-                        openICloudFolder()
-                    } label: {
-                        Label("文件夹", systemImage: "folder")
-                    }
-                    .buttonStyle(.bordered)
+                Button {
+                    openICloudFolder()
+                } label: {
+                    Label("文件夹", systemImage: "folder")
+                }
+                    .flatActionButton(height: 30)
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -360,24 +412,24 @@ struct SettingsView: View {
                     Button("导出全部") {
                         exportAllData()
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
                     
                     Button("立即备份") {
                         backupDatabase()
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
                     
                     Button("恢复备份") {
                         restoreDatabase()
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
                     
                     Button {
                         appVM.selectedSidebarItem = .syncHistory
                     } label: {
                         Label("同步历史", systemImage: "clock.arrow.circlepath")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
                 }
                 
                 Toggle("自动备份（启动 + 每 6 小时）", isOn: $autoBackupEnabled)
@@ -402,6 +454,51 @@ struct SettingsView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(dataActionMessage.contains("失败") ? .red : .secondary)
             }
+        }
+        .padding(16)
+        .premiumGlassPanel(cornerRadius: DesignSystem.CornerRadius.md, elevation: .sm)
+    }
+
+    private var aboutUpdateSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(palette.accent)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("关于与更新")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("当前版本 \(AppUpdateService.currentVersion)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if isCheckingUpdate {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    checkForUpdates()
+                } label: {
+                    Label("检查更新", systemImage: "arrow.clockwise")
+                }
+                .flatActionButton(.accent, height: 30)
+                .disabled(isCheckingUpdate)
+
+                Button {
+                    NSWorkspace.shared.open(latestReleaseURL ?? AppUpdateService.releasesURL)
+                } label: {
+                    Label("打开发布页", systemImage: "safari")
+                }
+                .flatActionButton(height: 30)
+            }
+
+            Text(updateStatusMessage ?? "会从 GitHub Releases 检查最新版。自动下载安装需要后续接入签名与 notarization。")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
         }
         .padding(16)
         .premiumGlassPanel(cornerRadius: DesignSystem.CornerRadius.md, elevation: .sm)
@@ -521,6 +618,27 @@ struct SettingsView: View {
         }
     }
 
+    private func checkForUpdates() {
+        isCheckingUpdate = true
+        updateStatusMessage = "正在检查 GitHub 最新版本..."
+        Task {
+            do {
+                let status = try await AppUpdateService.checkLatestRelease()
+                switch status {
+                case .upToDate(let version):
+                    updateStatusMessage = "当前已是最新版本：\(version)。"
+                    latestReleaseURL = nil
+                case .available(let current, let latest):
+                    updateStatusMessage = "发现新版本 \(latest.versionText)，当前版本 \(current)。可打开发布页下载。"
+                    latestReleaseURL = latest.htmlURL
+                }
+            } catch {
+                updateStatusMessage = UserFacingError.message(for: error, context: "检查更新")
+            }
+            isCheckingUpdate = false
+        }
+    }
+
     private func pasteInto(_ value: inout String) {
         guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else {
             settingsMessage = "剪贴板里没有可粘贴的文本。"
@@ -532,6 +650,7 @@ struct SettingsView: View {
     private func saveWeReadKey() {
         do {
             try KeychainService.saveWeReadAPIKey(weReadAPIKey.trimmingCharacters(in: .whitespacesAndNewlines))
+            autoSyncOnLaunch = false
             settingsMessage = "微信读书 Key 已保存。"
         } catch {
             settingsMessage = error.localizedDescription
@@ -582,6 +701,9 @@ struct SettingsView: View {
                 case .openAI: return openAIModel
                 case .deepSeek: return deepSeekModel
                 case .glm: return glmModel
+                case .minimax: return minimaxModel
+                case .aliyun: return aliyunModel
+                case .doubao: return doubaoModel
                 }
             },
             set: { value in
@@ -589,6 +711,9 @@ struct SettingsView: View {
                 case .openAI: openAIModel = value
                 case .deepSeek: deepSeekModel = value
                 case .glm: glmModel = value
+                case .minimax: minimaxModel = value
+                case .aliyun: aliyunModel = value
+                case .doubao: doubaoModel = value
                 }
             }
         )

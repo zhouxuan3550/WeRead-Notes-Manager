@@ -24,7 +24,7 @@ struct WeReadSyncProgress {
 
 struct WeReadAPIService {
     private let apiKey: String
-    private let skillVersion = "1.0.3"
+    private let skillVersion = "1.0.4"
     private let gatewayURL = URL(string: "https://i.weread.qq.com/api/agent/gateway")!
 
     init(apiKey: String) {
@@ -467,7 +467,7 @@ enum WeReadAPIError: LocalizedError {
         case .server(let message):
             return message
         case .upgradeRequired(let message):
-            return message
+            return "微信读书同步接口需要更新，请稍后重试或重新保存微信读书 API Key。原始提示：\(message)"
         }
     }
 }

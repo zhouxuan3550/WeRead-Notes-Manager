@@ -220,7 +220,7 @@ struct OnboardingView: View {
                 Button("上一步") {
                     withAnimation { currentStep -= 1 }
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
             }
 
             Spacer()
@@ -229,13 +229,13 @@ struct OnboardingView: View {
                 Button(currentStep == 2 ? "跳过" : "下一步") {
                     advance()
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .keyboardShortcut(.defaultAction)
             } else {
                 Button("开始使用") {
                     finish()
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .keyboardShortcut(.defaultAction)
             }
         }

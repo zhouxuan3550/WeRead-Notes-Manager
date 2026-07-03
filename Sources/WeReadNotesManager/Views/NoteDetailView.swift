@@ -5,6 +5,7 @@ struct NoteDetailView: View {
     let note: ReadingNote
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.themePalette) private var palette
     @State private var isEditing = false
     @State private var editHighlight = ""
     @State private var editUserNote = ""
@@ -15,6 +16,8 @@ struct NoteDetailView: View {
     @State private var cardTemplate: ReadingCardTemplate = .dark
     @State private var showAskAI = false
     @State private var showExportOptions = false
+    @State private var showWritingCard = false
+    @State private var showShareCard = false
 
     var body: some View {
         ScrollView {
@@ -38,6 +41,12 @@ struct NoteDetailView: View {
         .sheet(isPresented: $showAskAI) {
             AskAIView(note: note)
         }
+        .sheet(isPresented: $showWritingCard) {
+            WritingCardGeneratorView(note: note)
+        }
+        .sheet(isPresented: $showShareCard) {
+            ShareCardStudioView(note: note)
+        }
         .alert("导出失败", isPresented: Binding(
             get: { exportError != nil },
             set: { if !$0 { exportError = nil } }
@@ -50,9 +59,14 @@ struct NoteDetailView: View {
             if let statusMessage {
                 Text(statusMessage)
                     .font(.system(size: 12))
+                    .foregroundStyle(palette.textPrimary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(
+                        Capsule()
+                            .fill(palette.surfaceElevated)
+                            .overlay(Capsule().stroke(palette.borderMedium, lineWidth: 0.5))
+                    )
                     .padding(.bottom, 20)
                     .transition(.opacity)
             }
@@ -88,16 +102,20 @@ struct NoteDetailView: View {
             } label: {
                 Label("返回本书", systemImage: "chevron.left")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .keyboardShortcut("[", modifiers: [.command])
 
             if let positionText {
                 Text(positionText)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(.thinMaterial))
+                    .background(
+                        Capsule()
+                            .fill(palette.surfaceElevated)
+                            .overlay(Capsule().stroke(palette.borderSubtle, lineWidth: 0.5))
+                    )
             }
 
             Spacer()
@@ -107,7 +125,7 @@ struct NoteDetailView: View {
             } label: {
                 Label("上一条", systemImage: "chevron.up")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .disabled(previousNote == nil)
             .keyboardShortcut(.leftArrow, modifiers: [])
 
@@ -116,7 +134,7 @@ struct NoteDetailView: View {
             } label: {
                 Label("下一条", systemImage: "chevron.down")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .disabled(nextNote == nil)
             .keyboardShortcut(.rightArrow, modifiers: [])
         }
@@ -127,17 +145,18 @@ struct NoteDetailView: View {
             if let bookTitle = note.book?.title {
                 Text(bookTitle)
                     .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(palette.textPrimary)
             }
             HStack(spacing: 8) {
                 if let author = note.book?.author {
                     Text(author)
                         .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textSecondary)
                 }
                 if let chapter = note.chapter {
                     Text("· \(chapter)")
                         .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textSecondary)
                 }
             }
         }
@@ -147,20 +166,20 @@ struct NoteDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("原文划线")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
             Text(note.highlight)
                 .font(.system(size: 16))
-                .foregroundStyle(.primary)
+                .foregroundStyle(palette.textPrimary)
                 .lineSpacing(4)
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(palette.surfaceElevated)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                        .stroke(palette.borderSubtle, lineWidth: 1)
                 )
         }
     }
@@ -169,20 +188,20 @@ struct NoteDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("我的想法")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
             Text(text)
                 .font(.system(size: 15))
-                .foregroundStyle(.primary)
+                .foregroundStyle(palette.textPrimary)
                 .lineSpacing(4)
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(palette.surface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(palette.borderSubtle, lineWidth: 1)
                 )
         }
     }
@@ -214,112 +233,130 @@ struct NoteDetailView: View {
         HStack {
             Text(label)
                 .font(.system(size: 13))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
                 .frame(width: 72, alignment: .leading)
             Text(value)
                 .font(.system(size: 13))
+                .foregroundStyle(palette.textPrimary)
         }
     }
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
+            // MARK: 一级操作
             Button {
                 appVM.toggleFavorite(note)
             } label: {
                 Label(note.isFavorite ? "已收藏" : "收藏", systemImage: note.isFavorite ? "star.fill" : "star")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(note.isFavorite ? .accent : .secondary, height: 32)
 
             Button {
                 appVM.markReviewed(note)
             } label: {
                 Label("已复习", systemImage: "checkmark.circle.fill")
             }
-            .buttonStyle(.bordered)
-
-            if let sourceURL = note.sourceURL, let url = URL(string: sourceURL) {
-                Button {
-                    NSWorkspace.shared.open(url)
-                } label: {
-                    Label("打开微信读书", systemImage: "arrow.up.forward.app")
-                }
-                .buttonStyle(.bordered)
-            }
+            .flatActionButton(.secondary, height: 32)
 
             Button {
                 showAskAI = true
             } label: {
                 Label("问 AI", systemImage: "sparkles")
             }
-            .buttonStyle(.bordered)
-
-            Picker("模板", selection: $cardTemplate) {
-                ForEach(ReadingCardTemplate.allCases) { template in
-                    Text(template.label).tag(template)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(width: 92)
-
-            Button {
-                do {
-                    try ReadingCardExporter.export(note: note, template: cardTemplate)
-                } catch {
-                    exportError = error.localizedDescription
-                }
-            } label: {
-                Label("导出卡片", systemImage: "photo")
-            }
-            .buttonStyle(.bordered)
-
-            // 导出到 Anki
-            Button {
-                exportToAnki()
-            } label: {
-                Label("导出 Anki", systemImage: "rectangle.on.rectangle")
-            }
-            .buttonStyle(.bordered)
-
-            // 分享（Feature 8）
-            ShareLink(
-                item: renderShareText(),
-                subject: Text(note.book?.title ?? "书摘"),
-                message: Text(note.highlight),
-                preview: SharePreview(
-                    note.book?.title ?? "书摘",
-                    image: Image(systemName: "book")
-                )
-            ) {
-                Label("分享", systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(.bordered)
-
-            // 复制为 Markdown 引用
-            Button {
-                let pb = NSPasteboard.general
-                pb.clearContents()
-                pb.setString(renderMarkdownQuote(), forType: .string)
-                statusMessage = "已复制 Markdown 引用"
-            } label: {
-                Label("复制引用", systemImage: "doc.on.doc")
-            }
-            .buttonStyle(.bordered)
+            .flatActionButton(.accent, height: 32)
 
             Spacer()
 
+            // MARK: 导出与分享
+            HStack(spacing: 8) {
+                Picker("模板", selection: $cardTemplate) {
+                    ForEach(ReadingCardTemplate.allCases) { template in
+                        Text(template.label).tag(template)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 80)
+
+                Button {
+                    do {
+                        try ReadingCardExporter.export(note: note, template: cardTemplate)
+                    } catch {
+                        exportError = error.localizedDescription
+                    }
+                } label: {
+                    Label("卡片", systemImage: "photo")
+                }
+                .flatActionButton(.secondary, height: 32)
+
+                Menu {
+                    if let sourceURL = note.sourceURL, let url = URL(string: sourceURL) {
+                        Button {
+                            NSWorkspace.shared.open(url)
+                        } label: {
+                            Label("打开微信读书", systemImage: "arrow.up.forward.app")
+                        }
+                    }
+
+                    Button {
+                        showWritingCard = true
+                    } label: {
+                        Label("生成素材卡", systemImage: "rectangle.stack")
+                    }
+
+                    Button {
+                        showShareCard = true
+                    } label: {
+                        Label("制作分享卡片", systemImage: "photo.artframe")
+                    }
+
+                    Button {
+                        exportToAnki()
+                    } label: {
+                        Label("导出 Anki", systemImage: "rectangle.on.rectangle")
+                    }
+
+                    Button {
+                        let pb = NSPasteboard.general
+                        pb.clearContents()
+                        pb.setString(renderMarkdownQuote(), forType: .string)
+                        statusMessage = "已复制 Markdown 引用"
+                    } label: {
+                        Label("复制 Markdown 引用", systemImage: "doc.on.doc")
+                    }
+
+                    ShareLink(
+                        item: renderShareText(),
+                        subject: Text(note.book?.title ?? "书摘"),
+                        message: Text(note.highlight),
+                        preview: SharePreview(
+                            note.book?.title ?? "书摘",
+                            image: Image(systemName: "book")
+                        )
+                    ) {
+                        Label("分享", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Label("更多", systemImage: "ellipsis.circle")
+                }
+                .menuStyle(.borderlessButton)
+                .flatActionButton(.secondary, height: 32)
+            }
+
+            // MARK: 笔记管理
             Button {
                 startEditing()
             } label: {
                 Label("编辑", systemImage: "pencil")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(.secondary, height: 32)
 
             Button(role: .destructive) {
                 appVM.deleteNote(note, context: modelContext)
             } label: {
                 Label("删除", systemImage: "trash")
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(.destructive, height: 32)
         }
         .padding(.top, 12)
     }
@@ -332,7 +369,7 @@ struct NoteDetailView: View {
                 Label(previousNoteLabel, systemImage: "arrow.up")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.large)
             .disabled(previousNote == nil)
 
@@ -342,7 +379,7 @@ struct NoteDetailView: View {
                 Label(nextNoteLabel, systemImage: "arrow.down")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.large)
             .disabled(nextNote == nil)
         }
@@ -443,26 +480,26 @@ struct NoteDetailView: View {
         VStack(spacing: 16) {
             Text("编辑笔记")
                 .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(palette.textPrimary)
             TextField("章节", text: $editChapter)
                 .textFieldStyle(.roundedBorder)
             VStack(alignment: .leading, spacing: 4) {
                 Text("划线内容")
                     .font(.system(size: 13, weight: .medium))
-                TextEditor(text: $editHighlight)
-                    .frame(minHeight: 80)
-                    .border(.quaternary, width: 1)
+                    .foregroundStyle(palette.textSecondary)
+                ThemedTextEditor(text: $editHighlight, minHeight: 80)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("我的想法")
                     .font(.system(size: 13, weight: .medium))
-                TextEditor(text: $editUserNote)
-                    .frame(minHeight: 60)
-                    .border(.quaternary, width: 1)
+                    .foregroundStyle(palette.textSecondary)
+                ThemedTextEditor(text: $editUserNote, minHeight: 60)
             }
             TextField("位置 / 页码", text: $editLocation)
                 .textFieldStyle(.roundedBorder)
             HStack {
                 Button("取消") { isEditing = false }
+                    .foregroundStyle(palette.textSecondary)
                 Spacer()
                 Button("保存") {
                     note.highlight = editHighlight.trimmingCharacters(in: .whitespaces)
@@ -475,12 +512,33 @@ struct NoteDetailView: View {
                     note.updatedAt = Date()
                     isEditing = false
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(.accent, height: 32)
                 .disabled(editHighlight.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(24)
         .frame(width: 440, height: 420)
+        .background(palette.background)
+    }
+
+    private struct ThemedTextEditor: View {
+        @Binding var text: String
+        var minHeight: CGFloat
+        @Environment(\.themePalette) private var palette
+
+        var body: some View {
+            TextEditor(text: $text)
+                .font(.system(size: 14))
+                .foregroundStyle(palette.textPrimary)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: minHeight)
+                .padding(4)
+                .background(palette.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(palette.borderMedium, lineWidth: 1)
+                )
+        }
     }
     
     // MARK: - Anki 导出

@@ -332,7 +332,7 @@ struct PluginEditorView: View {
                     onSave(plugin)
                     dismiss()
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(16)
@@ -378,9 +378,9 @@ struct PluginListView: View {
                 } label: {
                     Label("新建", systemImage: "plus")
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 Button("导入") { importFromFile() }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 Button("关闭") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }

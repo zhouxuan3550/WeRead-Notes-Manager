@@ -4,6 +4,7 @@ import SwiftUI
 struct BookNotesView: View {
     let book: Book
     @Environment(AppViewModel.self) private var appVM
+    @Environment(\.themePalette) private var palette
     @State private var selectedChapter = "全部"
     @State private var selectedNote: ReadingNote?
     @State private var askAINote: ReadingNote?
@@ -15,17 +16,20 @@ struct BookNotesView: View {
     var body: some View {
         HStack(spacing: 0) {
             chapterSidebar
-                .frame(width: 230)
+                .frame(width: 270)
 
-            Divider().opacity(0.35)
+            PremiumDivider()
 
             noteStream
+                .frame(minWidth: 520, maxWidth: .infinity)
+                .layoutPriority(1)
 
-            Divider().opacity(0.35)
+            PremiumDivider()
 
             inspector
-                .frame(width: 280)
+                .frame(width: 320)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             restoreReadingPosition()
         }
@@ -65,7 +69,7 @@ struct BookNotesView: View {
                         .lineLimit(3)
                     Text(book.author ?? "未知作者")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textSecondary)
                         .lineLimit(1)
                 }
             }
@@ -77,7 +81,7 @@ struct BookNotesView: View {
 
             Text("章节")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 6) {
@@ -97,7 +101,7 @@ struct BookNotesView: View {
                     Label("打开微信读书", systemImage: "arrow.up.forward.app")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 // 同步到外部工具
                 Menu {
@@ -120,7 +124,11 @@ struct BookNotesView: View {
                 .menuStyle(.borderlessButton)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(8)
-                .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary.opacity(0.3)))
+                .background(
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(palette.surfaceElevated)
+                        .overlay(RoundedRectangle(cornerRadius: 7).stroke(palette.borderSubtle, lineWidth: 0.5))
+                )
             }
         }
         .padding(18)
@@ -129,60 +137,55 @@ struct BookNotesView: View {
     private var noteStream: some View {
         VStack(spacing: 0) {
             HStack {
-                Button {
+                BookNotesIconButton(systemImage: "chevron.left", title: "返回书架") {
                     appVM.selectedBook = nil
                     appVM.selectedSidebarItem = .books
-                } label: {
-                    Label("返回", systemImage: "chevron.left")
                 }
-                .buttonStyle(.bordered)
                 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(selectedChapter == "全部" ? "全书摘录" : selectedChapter)
                         .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(palette.textPrimary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                     Text("\(filteredNotes.count) 条，按章节和位置排序")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textSecondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(1)
 
                 Spacer()
 
-                Button {
+                BookNotesIconButton(systemImage: "chevron.up", title: "上一条") {
                     goToPreviousNote()
-                } label: {
-                    Image(systemName: "chevron.up")
                 }
-                .buttonStyle(.bordered)
                 .disabled(previousNote == nil)
 
-                Button {
+                BookNotesIconButton(systemImage: "chevron.down", title: "下一条") {
                     goToNextNote()
-                } label: {
-                    Image(systemName: "chevron.down")
                 }
-                .buttonStyle(.bordered)
                 .disabled(nextNote == nil)
 
-                Button {
+                BookNotesIconButton(systemImage: "square.grid.3x3", title: "导出卡片组") {
                     do {
                         try ReadingCardExporter.exportBatch(notes: Array(filteredNotes.prefix(9)), template: cardTemplate)
                     } catch {
                         exportError = error.localizedDescription
                     }
-                } label: {
-                    Label("卡片组", systemImage: "square.grid.3x3")
                 }
-                .buttonStyle(.bordered)
                 .disabled(filteredNotes.isEmpty)
             }
             .padding(18)
 
-            Divider().opacity(0.35)
+            PremiumDivider()
 
             if filteredNotes.isEmpty {
-                ContentUnavailableView("本章没有摘录", systemImage: "note.text")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(
+                    title: "本章没有摘录",
+                    subtitle: "这本书在当前章节下没有笔记，换个章节看看",
+                    systemImage: "note.text"
+                )
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -193,6 +196,7 @@ struct BookNotesView: View {
                                 BookReaderRow(note: note, isSelected: selectedNote?.id == note.id)
                             }
                             .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .contextMenu {
                                 Button("问 AI") { askAINote = note }
                                 Button(note.isFavorite ? "取消收藏" : "收藏") { appVM.toggleFavorite(note) }
@@ -203,11 +207,12 @@ struct BookNotesView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(18)
                 }
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var inspector: some View {
@@ -215,26 +220,29 @@ struct BookNotesView: View {
             if let note = selectedNote {
                 Text("当前摘录")
                     .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(palette.textPrimary)
 
                 if let positionText {
                     Text(positionText)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textTertiary)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text(note.chapter ?? "未分章")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textTertiary)
                     Text(note.highlight)
                         .font(.system(size: 14))
+                        .foregroundStyle(palette.textPrimary)
                         .lineSpacing(4)
                         .lineLimit(8)
                     if let userNote = note.userNote, !userNote.isEmpty {
                         Divider()
+                            .background(palette.borderSubtle)
                         Text(userNote)
                             .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.textSecondary)
                             .lineLimit(5)
                     }
                 }
@@ -265,7 +273,7 @@ struct BookNotesView: View {
                     Label("问 AI", systemImage: "sparkles")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     aiTextRequest = makeChapterSummaryRequest()
@@ -273,7 +281,7 @@ struct BookNotesView: View {
                     Label(selectedChapter == "全部" ? "总结全书" : "总结本章", systemImage: "sparkles.rectangle.stack")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     aiTextRequest = makeBatchQuestionRequest()
@@ -281,7 +289,7 @@ struct BookNotesView: View {
                     Label("批量追问", systemImage: "text.bubble")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     showBookSummary = true
@@ -289,7 +297,7 @@ struct BookNotesView: View {
                     Label("AI 总结本书", systemImage: "doc.text.image")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     do {
@@ -301,7 +309,7 @@ struct BookNotesView: View {
                     Label("导出卡片", systemImage: "photo")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     appVM.selectedBook = book
@@ -310,12 +318,15 @@ struct BookNotesView: View {
                     Label("打开详情阅读", systemImage: "arrow.right")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Spacer()
             } else {
-                ContentUnavailableView("选择一条摘录", systemImage: "text.quote")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                EmptyStateView(
+                    title: "选择一条摘录",
+                    subtitle: "在左侧列表中点击任意笔记查看详情",
+                    systemImage: "text.quote"
+                )
             }
         }
         .padding(18)
@@ -328,17 +339,18 @@ struct BookNotesView: View {
             HStack {
                 Text(title)
                     .lineLimit(1)
+                    .foregroundStyle(palette.textPrimary)
                 Spacer()
                 Text("\(count)")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textTertiary)
             }
             .font(.system(size: 13, weight: .medium))
             .padding(.horizontal, 10)
             .frame(height: 32)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(selectedChapter == title ? Color.white.opacity(0.12) : Color.clear)
+                    .fill(selectedChapter == title ? palette.selectionBackground : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -351,15 +363,20 @@ struct BookNotesView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(9)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.055)))
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(palette.surfaceElevated)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(palette.borderSubtle, lineWidth: 0.5))
+        )
     }
 
     private func inspectorRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.textSecondary)
             Spacer()
             Text(value)
+                .foregroundStyle(palette.textPrimary)
                 .lineLimit(1)
         }
         .font(.system(size: 12))
@@ -492,45 +509,78 @@ struct BookNotesView: View {
 private struct BookReaderRow: View {
     let note: ReadingNote
     let isSelected: Bool
+    @Environment(\.themePalette) private var palette
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(note.chapter ?? "未分章")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textTertiary)
                     .lineLimit(1)
                 Spacer()
                 if note.userNote?.isEmpty == false {
                     Image(systemName: "quote.bubble")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.textTertiary)
                 }
                 if note.isFavorite {
                     Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(palette.accent)
                 }
             }
 
             Text(note.highlight)
                 .font(.system(size: 14))
+                .foregroundStyle(palette.textPrimary)
                 .lineSpacing(3)
                 .lineLimit(4)
 
             if let userNote = note.userNote, !userNote.isEmpty {
                 Text(userNote)
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.textSecondary)
                     .lineLimit(2)
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.white.opacity(0.045))
+                .fill(isSelected ? palette.selectionBackground : palette.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(isSelected ? Color.accentColor.opacity(0.40) : Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(isSelected ? palette.accent.opacity(0.40) : palette.borderSubtle, lineWidth: 1)
         )
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct BookNotesIconButton: View {
+    let systemImage: String
+    let title: String
+    let action: () -> Void
+
+    @Environment(\.themePalette) private var palette
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(isEnabled ? palette.textSecondary : palette.textTertiary.opacity(0.5))
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(hovering && isEnabled ? palette.surfaceElevated.opacity(0.95) : palette.surfaceElevated.opacity(0.72))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(palette.borderSubtle, lineWidth: 0.7)
+                )
+        }
+        .buttonStyle(.plain)
+        .help(title)
+        .onHover { hovering = $0 }
     }
 }

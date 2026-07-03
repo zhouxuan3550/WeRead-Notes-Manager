@@ -9,6 +9,7 @@ struct TagsView: View {
     @State private var newTagName: String = ""
     @State private var renameTarget: Tag?
     @State private var renameDraft: String = ""
+    @State private var showAutoTag = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +23,10 @@ struct TagsView: View {
                 tagDetail
                     .frame(maxWidth: .infinity)
             }
+        }
+        .sheet(isPresented: $showAutoTag) {
+            AutoTagView()
+                .frame(width: 600, height: 520)
         }
     }
 
@@ -41,8 +46,15 @@ struct TagsView: View {
                     .frame(width: 180)
                     .onSubmit(createTag)
                 Button("新建") { createTag() }
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
                     .disabled(Tag.normalize(name: newTagName).isEmpty)
+
+                Button {
+                    showAutoTag = true
+                } label: {
+                    Label("AI 推荐", systemImage: "sparkles")
+                }
+                .flatActionButton(.secondary, height: 32)
             }
         }
         .padding(.horizontal, 20)
@@ -141,7 +153,7 @@ struct TagsView: View {
                     appVM.renameTag(tag, to: renameDraft, context: modelContext)
                     renameTarget = nil
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(Tag.normalize(name: renameDraft).isEmpty)
             }
         }
@@ -264,7 +276,7 @@ struct TagChipEditor: View {
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { addTag() }
                 Button("添加") { addTag() }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                     .disabled(Tag.normalize(name: newTagName).isEmpty)
             }
         }

@@ -41,20 +41,20 @@ struct DashboardView: View {
 
     private var hero: some View {
         let reviewCount = appVM.reviewRecommendedNotes().count
-        return HStack(alignment: .top, spacing: 24) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 9) {
-                    Text("今日温故")
-                        .font(.system(size: 26, weight: .semibold))
-                        .tracking(0)
-                    if featuredNote != nil {
-                        LiveBadge()
-                    }
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 9) {
+                Text("今日温故")
+                    .font(.system(size: 26, weight: .semibold))
+                    .tracking(0)
+                if featuredNote != nil {
+                    LiveBadge()
                 }
-                Text("从你的微信读书笔记里，挑一条今天值得重看的。")
-                    .font(.system(size: 14))
-                    .foregroundStyle(palette.textSecondary)
+            }
+            Text("从你的微信读书笔记里，挑一条今天值得重看的。")
+                .font(.system(size: 14))
+                .foregroundStyle(palette.textSecondary)
 
+            HStack(alignment: .top, spacing: 24) {
                 if let note = featuredNote {
                     Button {
                         appVM.selectedNote = note
@@ -64,28 +64,28 @@ struct DashboardView: View {
                     .buttonStyle(.plain)
                 } else {
                     ContentUnavailableView("还没有可温故的笔记", systemImage: "sparkles", description: Text("同步微信读书后，这里会出现今日精选"))
-                        .frame(minHeight: 210)
+                        .frame(minHeight: 156)
                 }
-            }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("今天")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(palette.textPrimary)
-                quickAction("复习 \(reviewCount) 条", icon: "rectangle.stack") {
-                    appVM.selectedSidebarItem = .todayReview
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("今天")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(palette.textPrimary)
+                    quickAction("复习 \(reviewCount) 条", icon: "rectangle.stack") {
+                        appVM.selectedSidebarItem = .todayReview
+                    }
+                    quickAction("打开书架", icon: "books.vertical") {
+                        appVM.selectedSidebarItem = .books
+                    }
+                    quickAction("搜索笔记", icon: "magnifyingglass") {
+                        appVM.selectedSidebarItem = .allNotes
+                    }
+                    quickAction("阅读报告", icon: "doc.text.magnifyingglass") {
+                        appVM.selectedSidebarItem = .readingReport
+                    }
                 }
-                quickAction("打开书架", icon: "books.vertical") {
-                    appVM.selectedSidebarItem = .books
-                }
-                quickAction("搜索笔记", icon: "magnifyingglass") {
-                    appVM.selectedSidebarItem = .allNotes
-                }
-                quickAction("阅读报告", icon: "doc.text.magnifyingglass") {
-                    appVM.selectedSidebarItem = .readingReport
-                }
+                .frame(width: 176)
             }
-            .frame(width: 176)
         }
     }
 
@@ -117,6 +117,7 @@ struct DashboardView: View {
                 Button("全部书籍") {
                     appVM.selectedSidebarItem = .books
                 }
+                .flatActionButton(height: 28)
             }
 
             let books = Array(appVM.books.sorted { ($0.lastImportedAt ?? $0.updatedAt) > ($1.lastImportedAt ?? $1.updatedAt) }.prefix(8))
@@ -135,7 +136,7 @@ struct DashboardView: View {
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
                                     BookCoverView(book: book, size: .large)
-                                        .shadow(color: .black.opacity(0.16), radius: 8, y: 4)
+                                        .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
                                     Text(book.title)
                                         .font(.system(size: 12, weight: .medium))
                                         .lineLimit(2)
@@ -233,7 +234,7 @@ private struct SyncStatusCard: View {
             Spacer()
             if syncState.lastError != nil {
                 Button("重试", action: onRetry)
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 30)
             }
         }
         .padding(.horizontal, 14)
@@ -252,7 +253,7 @@ private struct SyncStatusCard: View {
         if let error = syncState.lastError { return error }
         if let message = syncState.lastMessage { return message }
         if let date = syncState.lastSyncedAt { return "上次同步：\(date.shortString)" }
-        return "点击首页同步按钮即可拉取最新书摘"
+        return "需要更新时手动同步，启动时不会自动拉取"
     }
 }
 
@@ -293,7 +294,7 @@ struct FeaturedNoteCard: View {
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 214, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 156, alignment: .topLeading)
         .glassPanel()
     }
 }

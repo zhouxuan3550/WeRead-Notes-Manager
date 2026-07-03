@@ -164,6 +164,36 @@ final class NoteImportActorTests: XCTestCase {
         XCTAssertEqual(books.count, 2, "不同 author 应保留为独立书条目")
     }
 
+    func testPersist_ReportsLowNoteBooksSkippedByFilter() async throws {
+        let actor = NoteImportActor(modelContainer: container)
+        let result = makeResult(
+            books: [
+                ImportedBook(title: "少量笔记书", author: "作者", coverURL: nil),
+                ImportedBook(title: "足量笔记书", author: "作者", coverURL: nil)
+            ],
+            notes: [
+                ImportedNote(bookTitle: "少量笔记书", author: "作者", chapter: nil, highlight: "a", userNote: nil, location: nil, createdAt: nil, source: "manual", sourceID: nil),
+                ImportedNote(bookTitle: "足量笔记书", author: "作者", chapter: nil, highlight: "b1", userNote: nil, location: nil, createdAt: nil, source: "manual", sourceID: nil),
+                ImportedNote(bookTitle: "足量笔记书", author: "作者", chapter: nil, highlight: "b2", userNote: nil, location: nil, createdAt: nil, source: "manual", sourceID: nil)
+            ]
+        )
+
+        let record = try await actor.persist(
+            result,
+            fileName: "filter.md",
+            fileType: "md",
+            sourceName: "markdown",
+            minNotesPerBook: 2
+        )
+
+        XCTAssertEqual(record.booksCreated, 1)
+        XCTAssertEqual(record.notesCreated, 2)
+        XCTAssertEqual(record.skippedLowNoteBooks.count, 1)
+        XCTAssertEqual(record.skippedLowNoteBooks.first?.title, "少量笔记书")
+        XCTAssertEqual(record.skippedLowNoteBooks.first?.noteCount, 1)
+        XCTAssertTrue(record.message.contains("屏蔽 1 本少于 2 条笔记的书"))
+    }
+
     // MARK: - Helpers
 
     private func makeResult(books: [ImportedBook], notes: [ImportedNote]) -> ImportResult {

@@ -408,14 +408,14 @@ struct ErrorRecoveryView: View {
                 NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
                 dismiss()
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.small)
         case .openImport:
             Button("打开导入") {
                 NotificationCenter.default.post(name: .openImportRequested, object: nil)
                 dismiss()
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.small)
         case .retry:
             EmptyView()
@@ -423,21 +423,21 @@ struct ErrorRecoveryView: View {
             Button("打开") {
                 NSWorkspace.shared.open(url)
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.small)
         case .openAIKeySettings:
             Button("配置 API Key") {
                 NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
                 dismiss()
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.small)
         case .showBackupRestore:
             Button("查看备份") {
                 NotificationCenter.default.post(name: .openBackupRequested, object: nil)
                 dismiss()
             }
-            .buttonStyle(.bordered)
+            .flatActionButton(height: 32)
             .controlSize(.small)
         }
     }
@@ -458,7 +458,7 @@ struct ErrorRecoveryView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
         }
-        .buttonStyle(.borderedProminent)
+        .flatActionButton(.accent, height: 32)
     }
 
     // MARK: - 文档链接

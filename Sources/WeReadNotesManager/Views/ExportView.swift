@@ -128,7 +128,7 @@ struct ExportView: View {
                 Label("导出 \(exportFormat.title)", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.large)
             .disabled(notesToExport.isEmpty)
         }

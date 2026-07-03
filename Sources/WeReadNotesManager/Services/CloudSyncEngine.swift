@@ -274,14 +274,14 @@ struct CloudSyncSettingsView: View {
                         } label: {
                             Label("下载", systemImage: "icloud.and.arrow.down")
                         }
-                        .buttonStyle(.bordered)
+                        .flatActionButton(height: 32)
 
                         Button {
                             Task { await engine.pushLocalChanges() }
                         } label: {
                             Label("上传", systemImage: "icloud.and.arrow.up")
                         }
-                        .buttonStyle(.bordered)
+                        .flatActionButton(height: 32)
                     }
                 }
 

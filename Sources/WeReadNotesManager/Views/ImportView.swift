@@ -110,10 +110,6 @@ struct ImportView: View {
                 .textFieldStyle(.roundedBorder)
                 .disabled(isImporting)
 
-            Toggle("启动软件后自动同步微信读书", isOn: $autoSyncOnLaunch)
-                .font(.system(size: 13))
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
             HStack(spacing: 10) {
                 Button {
                     pasteAPIKeyFromClipboard()
@@ -128,25 +124,29 @@ struct ImportView: View {
                 } label: {
                     Label(isImporting ? "同步中..." : "同步微信读书笔记", systemImage: "arrow.triangle.2.circlepath")
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(isImporting || apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Button("保存 Key") {
                     saveAPIKey()
                 }
+                .flatActionButton(height: 32)
                 .disabled(isImporting || apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 Button("清除 Key") {
                     clearAPIKey()
                 }
+                .flatActionButton(height: 32)
                 .disabled(isImporting || apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                 if isImporting {
                     Button("取消") {
                         cancelSync()
                     }
+                    .flatActionButton(height: 32)
                 }
             }
+            .flatActionButton(height: 32)
 
             if let syncMessage {
                 Text(syncMessage)
@@ -196,6 +196,7 @@ struct ImportView: View {
             Button(buttonTitle) {
                 chooseFile(kind)
             }
+            .flatActionButton(height: 32)
             .disabled(isImporting)
         }
         .padding(14)
@@ -212,6 +213,7 @@ struct ImportView: View {
                 Button("完成") {
                     dismiss()
                 }
+                .flatActionButton(.accent, height: 30)
                 .keyboardShortcut(.defaultAction)
             }
 
@@ -221,10 +223,28 @@ struct ImportView: View {
                 HStack(spacing: 10) {
                     syncMetric("新增", result.notesCreated, .green)
                     syncMetric("重复", result.duplicatesSkipped, .orange)
+                    syncMetric("屏蔽书籍", result.skippedLowNoteBooks.count, .blue)
                     syncMetric("失败", result.failedCount, result.failedCount > 0 ? .red : .secondary)
                 }
                 Text(result.message)
                     .foregroundStyle(.secondary)
+
+                if !result.skippedLowNoteBooks.isEmpty {
+                    Divider().opacity(0.35)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("已按规则屏蔽少量笔记书籍")
+                            .font(.system(size: 12, weight: .semibold))
+                        ForEach(result.skippedLowNoteBooks.prefix(6), id: \.displayName) { book in
+                            Text(book.displayName)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        if result.skippedLowNoteBooks.count > 6 {
+                            Text("还有 \(result.skippedLowNoteBooks.count - 6) 本未显示")
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
             }
             .font(.system(size: 12))
         }
@@ -276,6 +296,7 @@ struct ImportView: View {
         do {
             try KeychainService.saveWeReadAPIKey(key)
             UserDefaults.standard.removeObject(forKey: "wereadAPIKey")
+            autoSyncOnLaunch = false
             syncMessage = "API Key 已保存到本机 Keychain。"
         } catch {
             syncMessage = error.localizedDescription
@@ -355,7 +376,8 @@ struct ImportView: View {
                     notesCreated: summary.notesCreated,
                     duplicatesSkipped: summary.duplicatesSkipped,
                     failedCount: summary.failedCount,
-                    message: summary.message
+                    message: summary.message,
+                    skippedLowNoteBooks: summary.skippedLowNoteBooks
                 )
                 appVM.refreshBooks(context: modelContext)
                 appVM.selectedSidebarItem = .books
@@ -378,7 +400,7 @@ struct ImportView: View {
                     notesCreated: 0,
                     duplicatesSkipped: 0,
                     failedCount: 1,
-                    message: error.localizedDescription
+                    message: UserFacingError.message(for: error, context: "同步微信读书")
                 )
                 syncMessage = "同步失败。"
                 syncProgress = nil
@@ -418,7 +440,8 @@ struct ImportView: View {
                 notesCreated: summary.notesCreated,
                 duplicatesSkipped: summary.duplicatesSkipped,
                 failedCount: summary.failedCount,
-                message: summary.message
+                message: summary.message,
+                skippedLowNoteBooks: summary.skippedLowNoteBooks
             )
             appVM.refreshBooks(context: modelContext)
             appVM.selectedSidebarItem = .books
@@ -431,7 +454,7 @@ struct ImportView: View {
                 notesCreated: 0,
                 duplicatesSkipped: 0,
                 failedCount: 1,
-                message: error.localizedDescription
+                message: UserFacingError.message(for: error, context: "导入文件")
             )
         }
     }
@@ -501,6 +524,25 @@ struct ImportResultSummary {
     let duplicatesSkipped: Int
     let failedCount: Int
     let message: String
+    let skippedLowNoteBooks: [SkippedImportBook]
+
+    init(
+        fileName: String,
+        source: String,
+        notesCreated: Int,
+        duplicatesSkipped: Int,
+        failedCount: Int,
+        message: String,
+        skippedLowNoteBooks: [SkippedImportBook] = []
+    ) {
+        self.fileName = fileName
+        self.source = source
+        self.notesCreated = notesCreated
+        self.duplicatesSkipped = duplicatesSkipped
+        self.failedCount = failedCount
+        self.message = message
+        self.skippedLowNoteBooks = skippedLowNoteBooks
+    }
 
     var sourceDisplayName: String {
         switch source {

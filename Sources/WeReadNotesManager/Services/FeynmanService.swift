@@ -335,6 +335,7 @@ enum FeynmanService {
         case .openAI: return AIProvider.openAI.defaultModel
         case .deepSeek: return AIProvider.deepSeek.defaultModel
         case .glm: return AIProvider.glm.defaultModel
+        case .minimax, .aliyun, .doubao: return provider.savedModel
         }
     }
 }

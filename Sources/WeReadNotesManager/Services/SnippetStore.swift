@@ -188,14 +188,14 @@ struct SnippetEditorView: View {
                     } label: {
                         Label("删除", systemImage: "trash")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 }
                 Spacer()
                 Button("保存") {
                     onSave(snippet)
                     dismiss()
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .keyboardShortcut(.defaultAction)
             }
             .padding(16)
@@ -228,7 +228,7 @@ struct SnippetListView: View {
                 } label: {
                     Label("新建", systemImage: "plus")
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 Button("关闭") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }

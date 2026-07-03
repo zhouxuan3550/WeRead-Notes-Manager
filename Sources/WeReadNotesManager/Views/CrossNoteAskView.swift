@@ -1,25 +1,26 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
-/// AI 助手视图 - 提供实用的笔记处理功能
+/// AI 助手视图 - 提供实用的笔记处理功能，跨书问答基于 RAG 检索。
 struct CrossNoteAskView: View {
     @Environment(AppViewModel.self) private var appVM
-    @Query private var allBooks: [Book]
-    
-    // AI 配置
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Book.updatedAt, order: .reverse) private var allBooks: [Book]
+
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.openAI.rawValue
     @AppStorage("openAIModel") private var openAIModel = AIProvider.openAI.defaultModel
     @AppStorage("deepSeekModel") private var deepSeekModel = AIProvider.deepSeek.defaultModel
     @AppStorage("glmModel") private var glmModel = AIProvider.glm.defaultModel
-    
-    // 状态
+
     @State private var selectedBook: Book?
-    @State private var selectedNotes: Set<ReadingNote> = []
+    @State private var selectedNoteIDs: Set<UUID> = []
     @State private var isProcessing = false
     @State private var resultText = ""
     @State private var errorMessage: String?
-    
-    // 快捷功能
+    @State private var citations: [Citation] = []
+    @State private var question = ""
+
     enum QuickAction {
         case summarize
         case extractKeyPoints
@@ -28,35 +29,29 @@ struct CrossNoteAskView: View {
         case rewrite
         case createFlashcards
     }
-    
-    @State private var currentAction: QuickAction?
-    
+
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
-            
+
             HStack(spacing: 0) {
-                // 左侧：选择笔记
                 noteSelectionPanel
                     .frame(width: 320)
-                
+
                 Divider()
-                
-                // 右侧：AI 处理
+
                 aiProcessingPanel
             }
         }
     }
-    
-    // MARK: - 头部
-    
+
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("AI 助手")
                     .font(.system(size: 20, weight: .semibold))
-                Text("选择笔记，让 AI 帮你处理")
+                Text("选择笔记，让 AI 帮你处理；或直接跨书提问")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
@@ -74,22 +69,19 @@ struct CrossNoteAskView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
     }
-    
-    // MARK: - 笔记选择面板
-    
+
     private var noteSelectionPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 书籍选择
             VStack(alignment: .leading, spacing: 8) {
                 Text("选择书籍")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
-                
+
                 Picker("", selection: Binding(
                     get: { selectedBook },
-                    set: { selectedBook = $0; selectedNotes.removeAll() }
+                    set: { selectedBook = $0; selectedNoteIDs.removeAll() }
                 )) {
                     Text("全部书籍").tag(Book?.none)
                     if !allBooks.isEmpty {
@@ -102,37 +94,36 @@ struct CrossNoteAskView: View {
                 .pickerStyle(.menu)
                 .padding(.horizontal, 12)
             }
-            
+
             Divider().padding(.vertical, 8)
-            
-            // 笔记列表
+
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("选择笔记 (\(selectedNotes.count))")
+                    Text("选择笔记 (\(selectedNoteIDs.count))")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    if !selectedNotes.isEmpty {
+                    if !selectedNoteIDs.isEmpty {
                         Button("清空") {
-                            selectedNotes.removeAll()
+                            selectedNoteIDs.removeAll()
                         }
-                        .buttonStyle(.bordered)
+                        .flatActionButton(height: 32)
                         .controlSize(.mini)
                     }
                 }
                 .padding(.horizontal, 16)
-                
+
                 ScrollView {
                     LazyVStack(spacing: 4) {
                         ForEach(availableNotes) { note in
                             NoteSelectionRow(
                                 note: note,
-                                isSelected: selectedNotes.contains(note)
+                                isSelected: selectedNoteIDs.contains(note.id)
                             ) {
-                                if selectedNotes.contains(note) {
-                                    selectedNotes.remove(note)
+                                if selectedNoteIDs.contains(note.id) {
+                                    selectedNoteIDs.remove(note.id)
                                 } else {
-                                    selectedNotes.insert(note)
+                                    selectedNoteIDs.insert(note.id)
                                 }
                             }
                         }
@@ -140,27 +131,26 @@ struct CrossNoteAskView: View {
                     .padding(.horizontal, 12)
                 }
             }
-            
+
             Divider().padding(.vertical, 8)
-            
-            // 快捷选择
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("快捷选择")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
-                
+
                 HStack(spacing: 8) {
                     Button("全部") {
-                        selectedNotes = Set(availableNotes)
+                        selectedNoteIDs = Set(availableNotes.map { $0.id })
                     }
                     Button("收藏") {
-                        selectedNotes = Set(availableNotes.filter { $0.isFavorite })
+                        selectedNoteIDs = Set(availableNotes.filter { $0.isFavorite }.map { $0.id })
                     }
                     Button("未复习") {
-                        selectedNotes = Set(availableNotes.filter { !$0.isReviewed })
+                        selectedNoteIDs = Set(availableNotes.filter { !$0.isReviewed }.map { $0.id })
                     }
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .controlSize(.small)
             }
             .padding(.horizontal, 16)
@@ -168,76 +158,93 @@ struct CrossNoteAskView: View {
         }
         .background(DesignSystem.Colors.surface.opacity(0.3))
     }
-    
-    // MARK: - AI 处理面板
-    
+
     private var aiProcessingPanel: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // 快捷操作
             VStack(alignment: .leading, spacing: 12) {
                 Text("快捷功能")
                     .font(.system(size: 13, weight: .semibold))
-                
+
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     QuickActionButton(
                         title: "总结笔记",
                         subtitle: "提炼核心内容",
                         icon: "doc.text.magnifyingglass"
-                    ) {
-                        performAction(.summarize)
-                    }
-                    
+                    ) { performAction(.summarize) }
+
                     QuickActionButton(
                         title: "提取要点",
                         subtitle: "关键信息",
                         icon: "list.bullet"
-                    ) {
-                        performAction(.extractKeyPoints)
-                    }
-                    
+                    ) { performAction(.extractKeyPoints) }
+
                     QuickActionButton(
                         title: "生成标签",
                         subtitle: "AI 推荐标签",
                         icon: "tag"
-                    ) {
-                        performAction(.generateTags)
-                    }
-                    
+                    ) { performAction(.generateTags) }
+
                     QuickActionButton(
                         title: "翻译内容",
                         subtitle: "中英文互译",
                         icon: "globe"
-                    ) {
-                        performAction(.translate)
-                    }
-                    
+                    ) { performAction(.translate) }
+
                     QuickActionButton(
                         title: "润色改写",
                         subtitle: "优化表达",
                         icon: "wand.and.stars"
-                    ) {
-                        performAction(.rewrite)
-                    }
-                    
+                    ) { performAction(.rewrite) }
+
                     QuickActionButton(
                         title: "制作闪卡",
                         subtitle: "Anki 格式",
                         icon: "rectangle.on.rectangle"
-                    ) {
-                        performAction(.createFlashcards)
-                    }
+                    ) { performAction(.createFlashcards) }
                 }
             }
             .padding(.top, 16)
             .padding(.horizontal, 16)
-            
+
             Divider()
-            
-            // 结果区域
+
+            // 跨书问答
+            VStack(alignment: .leading, spacing: 10) {
+                Text("跨书问答（RAG）")
+                    .font(.system(size: 13, weight: .semibold))
+
+                TextEditor(text: $question)
+                    .font(.system(size: 13))
+                    .frame(minHeight: 70)
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(DesignSystem.Colors.surface.opacity(0.5))
+                    )
+
+                HStack {
+                    Text("基于已选笔记语义检索最相关片段作答")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button {
+                        Task { await askWithRAG() }
+                    } label: {
+                        Label(isProcessing ? "思考中..." : "提问", systemImage: "paperplane")
+                    }
+                    .flatActionButton(.accent, height: 32)
+                    .disabled(isProcessing || cleanedAPIKey.isEmpty || question.trimmingCharacters(in: .whitespaces).isEmpty || selectedNoteIDs.isEmpty)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            Divider()
+
             VStack(alignment: .leading, spacing: 12) {
                 Text("结果")
                     .font(.system(size: 13, weight: .semibold))
-                
+
                 if let errorMessage {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -251,14 +258,14 @@ struct CrossNoteAskView: View {
                     .background(Color.red.opacity(0.1))
                     .cornerRadius(8)
                 }
-                
+
                 ScrollView {
                     if resultText.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 32))
                                 .foregroundStyle(.tertiary)
-                            Text("选择笔记后使用快捷功能")
+                            Text("选择笔记后使用快捷功能或直接提问")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                         }
@@ -267,6 +274,7 @@ struct CrossNoteAskView: View {
                     } else {
                         Text(resultText)
                             .font(.system(size: 13))
+                            .lineSpacing(4)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
@@ -274,7 +282,37 @@ struct CrossNoteAskView: View {
                 }
                 .background(DesignSystem.Colors.surface.opacity(0.5))
                 .cornerRadius(10)
-                
+
+                if !citations.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("引用片段")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(citations) { citation in
+                            Button {
+                                jumpTo(citation: citation)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text("[片段 \(citation.index)]")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(Color.accentColor)
+                                    Text(citation.preview)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                    Spacer()
+                                }
+                                .padding(8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(DesignSystem.Colors.surfaceElevated.opacity(0.7))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
                 if !resultText.isEmpty {
                     HStack(spacing: 8) {
                         Spacer()
@@ -282,12 +320,13 @@ struct CrossNoteAskView: View {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(resultText, forType: .string)
                         }
-                        .buttonStyle(.bordered)
-                        
+                        .flatActionButton(height: 32)
+
                         Button("清空") {
                             resultText = ""
+                            citations = []
                         }
-                        .buttonStyle(.bordered)
+                        .flatActionButton(height: 32)
                     }
                 }
             }
@@ -295,179 +334,255 @@ struct CrossNoteAskView: View {
             .padding(.bottom, 16)
         }
     }
-    
-    // MARK: - 辅助方法
-    
+
     private var availableNotes: [ReadingNote] {
+        let notes: [ReadingNote]
         if let book = selectedBook {
-            return book.notes.filter { !$0.isDeleted }
+            notes = book.notes.filter { !$0.isDeleted }
         } else {
-            return appVM.allNotes
+            notes = appVM.allNotes
         }
+        return notes.filter { !$0.isDeleted }
     }
-    
+
     private var cleanedAPIKey: String {
         KeychainService.loadAPIKey(for: currentProvider) ?? ""
     }
-    
+
     private var currentProvider: AIProvider {
         AIProvider(rawValue: aiProviderRaw) ?? .openAI
     }
-    
+
     private var currentModel: String {
         switch currentProvider {
         case .openAI: return openAIModel
         case .deepSeek: return deepSeekModel
         case .glm: return glmModel
+        case .minimax, .aliyun, .doubao: return currentProvider.savedModel
         }
     }
-    
+
+    private var selectedNotes: [ReadingNote] {
+        availableNotes.filter { selectedNoteIDs.contains($0.id) }
+    }
+
     private func performAction(_ action: QuickAction) {
-        guard !selectedNotes.isEmpty else {
+        guard !selectedNoteIDs.isEmpty else {
             errorMessage = "请先选择笔记"
             return
         }
-        
+
         guard !cleanedAPIKey.isEmpty else {
             errorMessage = "请先在设置中配置 AI API Key"
             return
         }
-        
+
         isProcessing = true
-        currentAction = action
         errorMessage = nil
         resultText = ""
-        
-        let notesText = selectedNotes.map { note in
+        citations = []
+
+        Task {
+            await runAction(action)
+        }
+    }
+
+    private func runAction(_ action: QuickAction) async {
+        let notesArray = Array(selectedNotes)
+        let service = AIChatService(provider: currentProvider, apiKey: cleanedAPIKey, model: currentModel)
+
+        do {
+            let prompt = buildPrompt(for: action, notes: notesArray)
+            var text = ""
+            for try await delta in service.askStream(input: prompt) {
+                text += delta
+            }
+            await MainActor.run {
+                resultText = text
+                citations = []
+                isProcessing = false
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                isProcessing = false
+            }
+        }
+    }
+
+    private func askWithRAG() async {
+        guard !cleanedAPIKey.isEmpty else {
+            errorMessage = "请先在设置中配置 AI API Key"
+            return
+        }
+        guard !selectedNotes.isEmpty else {
+            errorMessage = "请先选择笔记"
+            return
+        }
+
+        isProcessing = true
+        errorMessage = nil
+        resultText = ""
+        citations = []
+
+        let notesArray = Array(selectedNotes)
+        let retriever = NoteRetriever(notes: notesArray)
+        let context = retriever.contextString(for: question, k: 8)
+
+        // 构建引用映射
+        let top = retriever.topK(query: question, k: 8)
+        var citationMap: [Int: ReadingNote] = [:]
+        for (index, pair) in top.enumerated() {
+            citationMap[index + 1] = pair.note
+        }
+
+        let service = AIChatService(provider: currentProvider, apiKey: cleanedAPIKey, model: currentModel)
+
+        do {
+            var text = ""
+            for try await delta in service.askWithContext(question: question, context: context) {
+                text += delta
+            }
+
+            let parsedCitations = extractCitations(from: text, noteMap: citationMap)
+
+            await MainActor.run {
+                resultText = text
+                citations = parsedCitations
+                isProcessing = false
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                isProcessing = false
+            }
+        }
+    }
+
+    private func extractCitations(from text: String, noteMap: [Int: ReadingNote]) -> [Citation] {
+        let pattern = #"\[片段\s*(\d+)\]"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let nsRange = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: nsRange)
+
+        var seen: Set<Int> = []
+        var result: [Citation] = []
+        for match in matches {
+            guard let numberRange = Range(match.range(at: 1), in: text) else { continue }
+            guard let index = Int(text[numberRange]) else { continue }
+            guard !seen.contains(index), let note = noteMap[index] else { continue }
+            seen.insert(index)
+            let preview = String(note.highlight.prefix(60))
+            result.append(Citation(index: index, noteID: note.id, preview: preview, note: note))
+        }
+        return result
+    }
+
+    private func buildPrompt(for action: QuickAction, notes: [ReadingNote]) -> String {
+        let notesText = notes.map { note in
             var text = note.highlight
             if let userNote = note.userNote, !userNote.isEmpty {
                 text += "\n\n我的想法：\(userNote)"
             }
             return text
         }.joined(separator: "\n\n---\n\n")
-        
-        let prompt = buildPrompt(for: action, notes: notesText)
-        
-        let service = AIChatService(provider: currentProvider, apiKey: cleanedAPIKey, model: currentModel)
-        Task {
-            do {
-                for try await delta in service.askStream(input: prompt) {
-                    await MainActor.run {
-                        resultText += delta
-                    }
-                }
-                await MainActor.run {
-                    isProcessing = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    isProcessing = false
-                }
-            }
-        }
-    }
-    
-    private func buildPrompt(for action: QuickAction, notes: String) -> String {
+
         switch action {
         case .summarize:
-            return "请总结以下笔记内容，提炼核心观点：\n\n\(notes)"
+            return "请总结以下笔记内容，提炼核心观点：\n\n\(notesText)"
         case .extractKeyPoints:
-            return "请提取以下笔记中的关键要点，用清晰的列表呈现：\n\n\(notes)"
+            return "请提取以下笔记中的关键要点，用清晰的列表呈现：\n\n\(notesText)"
         case .generateTags:
-            return "请为以下笔记推荐 3-5 个合适的标签，用中文：\n\n\(notes)"
+            return "请为以下笔记推荐 3-5 个合适的标签，用中文：\n\n\(notesText)"
         case .translate:
-            return "请将以下内容翻译为中文（如果是中文则翻译为英文）：\n\n\(notes)"
+            return "请将以下内容翻译为中文（如果是中文则翻译为英文）：\n\n\(notesText)"
         case .rewrite:
-            return "请润色和改写以下内容，让它更清晰流畅：\n\n\(notes)"
+            return "请润色和改写以下内容，让它更清晰流畅：\n\n\(notesText)"
         case .createFlashcards:
-            return "请将以下内容制作成 Anki 闪卡格式（正面问题，背面答案）：\n\n\(notes)"
+            return "请将以下内容制作成 Anki 闪卡格式（正面问题，背面答案）：\n\n\(notesText)"
         }
+    }
+
+    private func jumpTo(citation: Citation) {
+        let note = citation.note
+        appVM.selectedBook = note.book
+        appVM.selectedNote = note
+        appVM.selectedSidebarItem = .books
     }
 }
 
-// MARK: - 辅助组件
+// MARK: - 引用
 
-struct NoteSelectionRow: View {
+struct Citation: Identifiable {
+    let id = UUID()
+    let index: Int
+    let noteID: UUID
+    let preview: String
+    let note: ReadingNote
+}
+
+private struct NoteSelectionRow: View {
     let note: ReadingNote
     let isSelected: Bool
-    let onTap: () -> Void
-    
+    let action: () -> Void
+
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .top, spacing: 10) {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 8) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? DesignSystem.Colors.primary : .secondary)
-                
-                VStack(alignment: .leading, spacing: 4) {
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .frame(width: 18)
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(note.highlight)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(2)
-                    
-                    HStack(spacing: 6) {
-                        if let bookTitle = note.book?.title {
-                            Text(bookTitle)
-                                .font(.system(size: 10))
-                                .foregroundStyle(.secondary)
-                        }
-                        if note.isFavorite {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.yellow)
-                        }
-                    }
+                    Text(note.book?.title ?? "未知书籍")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                
-                Spacer()
+
+                Spacer(minLength: 0)
             }
-            .padding(10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? DesignSystem.Colors.primarySoft : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? DesignSystem.Colors.primary.opacity(0.4) : Color.clear, lineWidth: 1)
+                    .fill(isSelected ? DesignSystem.Colors.accent.opacity(0.16) : DesignSystem.Colors.surface.opacity(0.55))
             )
         }
         .buttonStyle(.plain)
     }
 }
 
-struct QuickActionButton: View {
+private struct QuickActionButton: View {
     let title: String
     let subtitle: String
     let icon: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(DesignSystem.Colors.primary)
-                    .frame(width: 32)
-                
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22)
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .semibold))
                     Text(subtitle)
-                        .font(.system(size: 10))
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
-                
-                Spacer()
+
+                Spacer(minLength: 0)
             }
             .padding(12)
-            .background(DesignSystem.Colors.surfaceElevated.opacity(0.7))
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(DesignSystem.Colors.borderSubtle, lineWidth: 1)
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .flatActionButton(.secondary, height: 54)
     }
 }

@@ -120,7 +120,7 @@ struct BackupRestoreView: View {
                 Button("更改...") {
                     chooseBackupDirectory()
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .controlSize(.small)
             }
             .padding(.horizontal, 12)
@@ -219,7 +219,7 @@ struct BackupRestoreView: View {
             } label: {
                 Label("恢复", systemImage: "arrow.uturn.backward")
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.small)
         }
         .padding(8)
@@ -253,7 +253,7 @@ struct BackupRestoreView: View {
                     .frame(maxWidth: .infinity)
                     .padding(10)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 Button {
                     importBackupZip()
@@ -267,7 +267,7 @@ struct BackupRestoreView: View {
                     .frame(maxWidth: .infinity)
                     .padding(10)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
             }
         }
     }

@@ -60,7 +60,7 @@ struct BatchOperationToolbar: View {
                     Label("复习", systemImage: "checkmark.circle.fill")
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 // 标签
                 Button {
@@ -69,7 +69,7 @@ struct BatchOperationToolbar: View {
                     Label("标签", systemImage: "tag.fill")
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 // 移书
                 if appVM.selectedBook == nil {
@@ -79,7 +79,7 @@ struct BatchOperationToolbar: View {
                         Label("移到", systemImage: "folder.fill")
                             .font(.system(size: 12))
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 }
 
                 // 复制
@@ -89,7 +89,7 @@ struct BatchOperationToolbar: View {
                     Label("复制", systemImage: "doc.on.doc")
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
 
                 // 导出
                 Menu {
@@ -135,7 +135,7 @@ struct BatchOperationToolbar: View {
                     Label("删除", systemImage: "trash")
                         .font(.system(size: 12))
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
                 .tint(palette.error)
             }
             .padding(.horizontal, 12)
@@ -365,7 +365,7 @@ private struct BatchAIChoiceSheet: View {
                             } label: {
                                 Label("复制结果", systemImage: "doc.on.doc")
                             }
-                            .buttonStyle(.bordered)
+                            .flatActionButton(height: 32)
 
                             Button {
                                 // 存为笔记
@@ -390,7 +390,7 @@ private struct BatchAIChoiceSheet: View {
                             } label: {
                                 Label("存为笔记", systemImage: "tray.and.arrow.down")
                             }
-                            .buttonStyle(.borderedProminent)
+                            .flatActionButton(.accent, height: 32)
                         }
                     }
 
@@ -511,7 +511,7 @@ private struct BatchTagPickerSheet: View {
                         appVM.batchAddTag(tag, to: selectedNotes, context: modelContext)
                         newTagName = ""
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                     .disabled(Tag.normalize(name: newTagName).isEmpty)
                 }
 

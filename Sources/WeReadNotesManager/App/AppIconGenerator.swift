@@ -294,12 +294,12 @@ struct AppIconPreview: View {
                         ?? URL(fileURLWithPath: NSHomeDirectory())
                     AppIconGenerator.exportAll(to: url)
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
 
                 Button("激活选中主题图标") {
                     AppIconSetter.setActive(theme: selectedTheme)
                 }
-                .buttonStyle(.bordered)
+                .flatActionButton(height: 32)
             }
         }
         .padding(20)

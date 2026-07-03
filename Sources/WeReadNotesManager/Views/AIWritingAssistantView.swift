@@ -186,7 +186,7 @@ struct AIWritingAssistantView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .flatActionButton(.accent, height: 32)
             .controlSize(.large)
             .disabled(isGenerating || topic.isEmpty || relatedNotes.isEmpty)
 
@@ -232,7 +232,7 @@ struct AIWritingAssistantView: View {
                     } label: {
                         Label("复制", systemImage: "doc.on.doc")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                     .help("复制到剪贴板")
 
                     Menu {
@@ -268,14 +268,14 @@ struct AIWritingAssistantView: View {
                     } label: {
                         Label("存为笔记", systemImage: "tray.and.arrow.down")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .flatActionButton(.accent, height: 32)
 
                     Button {
                         exportMarkdown()
                     } label: {
                         Label("导出", systemImage: "square.and.arrow.up")
                     }
-                    .buttonStyle(.bordered)
+                    .flatActionButton(height: 32)
                 }
             }
             .padding(.horizontal, 20)
@@ -396,6 +396,7 @@ struct AIWritingAssistantView: View {
         case .openAI: return openAIModel
         case .deepSeek: return deepSeekModel
         case .glm: return glmModel
+        case .minimax, .aliyun, .doubao: return currentProvider.savedModel
         }
     }
 

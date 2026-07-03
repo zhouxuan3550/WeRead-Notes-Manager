@@ -15,6 +15,9 @@ struct AITextWorkbenchView: View {
     @AppStorage("openAIModel") private var openAIModel = AIProvider.openAI.defaultModel
     @AppStorage("deepSeekModel") private var deepSeekModel = AIProvider.deepSeek.defaultModel
     @AppStorage("glmModel") private var glmModel = AIProvider.glm.defaultModel
+    @AppStorage("minimaxModel") private var minimaxModel = AIProvider.minimax.defaultModel
+    @AppStorage("aliyunModel") private var aliyunModel = AIProvider.aliyun.defaultModel
+    @AppStorage("doubaoModel") private var doubaoModel = AIProvider.doubao.defaultModel
     @State private var provider: AIProvider = .openAI
     @State private var apiKey = ""
     @State private var question = ""
@@ -74,7 +77,7 @@ struct AITextWorkbenchView: View {
                 } label: {
                     Label(isAsking ? "思考中..." : "提问", systemImage: "paperplane")
                 }
-                .buttonStyle(.borderedProminent)
+                .flatActionButton(.accent, height: 32)
                 .disabled(isAsking || cleanedAPIKey.isEmpty || question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
@@ -112,6 +115,9 @@ struct AITextWorkbenchView: View {
         case .openAI: return openAIModel
         case .deepSeek: return deepSeekModel
         case .glm: return glmModel
+        case .minimax: return minimaxModel
+        case .aliyun: return aliyunModel
+        case .doubao: return doubaoModel
         }
     }
 
@@ -123,6 +129,9 @@ struct AITextWorkbenchView: View {
                 case .openAI: openAIModel = value
                 case .deepSeek: deepSeekModel = value
                 case .glm: glmModel = value
+                case .minimax: minimaxModel = value
+                case .aliyun: aliyunModel = value
+                case .doubao: doubaoModel = value
                 }
             }
         )

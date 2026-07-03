@@ -4,6 +4,9 @@ enum AIProvider: String, CaseIterable, Identifiable {
     case openAI
     case deepSeek
     case glm
+    case minimax
+    case aliyun
+    case doubao
 
     var id: String { rawValue }
 
@@ -12,6 +15,9 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .openAI: return "OpenAI"
         case .deepSeek: return "DeepSeek"
         case .glm: return "GLM"
+        case .minimax: return "MiniMax"
+        case .aliyun: return "阿里云"
+        case .doubao: return "豆包"
         }
     }
 
@@ -20,6 +26,9 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .openAI: return "gpt-4.1-mini"
         case .deepSeek: return "deepseek-chat"
         case .glm: return "glm-4-flash"
+        case .minimax: return "MiniMax-M3"
+        case .aliyun: return "qwen-plus"
+        case .doubao: return "doubao-seed-1-6-flash"
         }
     }
 
@@ -28,6 +37,20 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .openAI: return "sk- 开头的 OpenAI Key"
         case .deepSeek: return "sk- 开头的 DeepSeek Key"
         case .glm: return "智谱 AI / GLM API Key"
+        case .minimax: return "MiniMax API Key"
+        case .aliyun: return "阿里云百炼 API Key"
+        case .doubao: return "火山方舟 / 豆包 API Key"
+        }
+    }
+
+    var modelDefaultsKey: String {
+        switch self {
+        case .openAI: return "openAIModel"
+        case .deepSeek: return "deepSeekModel"
+        case .glm: return "glmModel"
+        case .minimax: return "minimaxModel"
+        case .aliyun: return "aliyunModel"
+        case .doubao: return "doubaoModel"
         }
     }
 
@@ -39,7 +62,19 @@ enum AIProvider: String, CaseIterable, Identifiable {
             return "https://api.deepseek.com/chat/completions"
         case .glm:
             return "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+        case .minimax:
+            return "https://api.minimax.io/v1/chat/completions"
+        case .aliyun:
+            return "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        case .doubao:
+            return "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
         }
+    }
+
+    var savedModel: String {
+        let value = UserDefaults.standard.string(forKey: modelDefaultsKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? defaultModel : value
     }
 }
 

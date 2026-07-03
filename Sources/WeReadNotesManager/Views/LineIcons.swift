@@ -190,24 +190,36 @@ enum LineIconPath {
     }
 
     static func gear() -> Path {
-        // 设置（齿轮简笔）
+        // 设置（齿轮轮廓）
         var p = Path()
         let center = CGPoint(x: 12, y: 12)
-        let outer: CGFloat = 7
-        let inner: CGFloat = 4
 
-        // 8 齿
-        for i in 0..<8 {
-            let angle = Double(i) * .pi / 4 + .pi / 8
-            let x1 = center.x + CGFloat(cos(angle)) * outer
-            let y1 = center.y + CGFloat(sin(angle)) * outer
-            let x2 = center.x + CGFloat(cos(angle)) * (outer + 2)
-            let y2 = center.y + CGFloat(sin(angle)) * (outer + 2)
-            p.move(to: CGPoint(x: x1, y: y1))
-            p.addLine(to: CGPoint(x: x2, y: y2))
+        // 外圈用交替半径画出齿轮边缘，避免看起来像太阳。
+        let points = 24
+        for i in 0..<points {
+            let angle = Double(i) / Double(points) * .pi * 2 - .pi / 2
+            let radius: CGFloat
+            switch i % 3 {
+            case 0:
+                radius = 9
+            case 1:
+                radius = 7.1
+            default:
+                radius = 7.1
+            }
+            let point = CGPoint(
+                x: center.x + CGFloat(cos(angle)) * radius,
+                y: center.y + CGFloat(sin(angle)) * radius
+            )
+            if i == 0 {
+                p.move(to: point)
+            } else {
+                p.addLine(to: point)
+            }
         }
-        // 中心圆
-        p.addEllipse(in: CGRect(x: center.x - inner, y: center.y - inner, width: inner * 2, height: inner * 2))
+        p.closeSubpath()
+
+        p.addEllipse(in: CGRect(x: 9, y: 9, width: 6, height: 6))
         return p
     }
 

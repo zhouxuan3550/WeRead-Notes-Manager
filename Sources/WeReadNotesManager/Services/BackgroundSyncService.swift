@@ -6,9 +6,8 @@ import UserNotifications
 /// 后台定时同步服务（Feature 10）。
 ///
 /// macOS 上 `BGTaskScheduler` 需要 App Extension 才能真正后台运行；
-/// 在主 App 进程内，我们用两个时机触发：
-/// - **App 启动后**：延迟 5 秒，避免阻塞 UI
-/// - **每日 21:00 本地通知**：提示用户手动同步（macOS 没有真正的 background fetch）
+/// 在主 App 进程内只做每日 21:00 本地通知，提示用户手动同步。
+/// 不在启动时自动拉取微信读书，避免影响用户直接进入书摘阅读。
 ///
 /// 未来如果想做真正的后台同步，需要把同步逻辑搬到 App Extension target 里。
 @MainActor
