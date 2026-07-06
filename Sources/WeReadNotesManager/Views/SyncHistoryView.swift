@@ -65,7 +65,7 @@ struct SyncHistoryView: View {
             .foregroundStyle(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Capsule().fill(.ultraThinMaterial))
+            .appBadgeSurface()
     }
 }
 

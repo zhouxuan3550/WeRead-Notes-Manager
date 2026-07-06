@@ -11,6 +11,7 @@ struct AITextRequest: Identifiable {
 struct AITextWorkbenchView: View {
     let request: AITextRequest
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.themePalette) private var palette
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.openAI.rawValue
     @AppStorage("openAIModel") private var openAIModel = AIProvider.openAI.defaultModel
     @AppStorage("deepSeekModel") private var deepSeekModel = AIProvider.deepSeek.defaultModel
@@ -40,13 +41,8 @@ struct AITextWorkbenchView: View {
                     .keyboardShortcut(.cancelAction)
             }
 
-            Picker("供应商", selection: $provider) {
-                ForEach(AIProvider.allCases) { provider in
-                    Text(provider.label).tag(provider)
-                }
-            }
-            .pickerStyle(.segmented)
-            .disabled(isAsking)
+            providerSelector
+                .disabled(isAsking)
 
             HStack(spacing: 10) {
                 SecureField(provider.keyPlaceholder, text: $apiKey)
@@ -55,6 +51,7 @@ struct AITextWorkbenchView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 150)
                 Button("保存 Key") { saveKey() }
+                    .flatActionButton(height: 30)
                     .disabled(cleanedAPIKey.isEmpty)
             }
 
@@ -63,7 +60,7 @@ struct AITextWorkbenchView: View {
                 .frame(height: 110)
                 .scrollContentBackground(.hidden)
                 .padding(8)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.055)))
+                .appFieldSurface()
 
             HStack {
                 if let statusMessage {
@@ -90,7 +87,7 @@ struct AITextWorkbenchView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             }
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.045)))
+            .appFieldSurface()
         }
         .padding(22)
         .frame(width: 680, height: 720)
@@ -108,6 +105,39 @@ struct AITextWorkbenchView: View {
 
     private var cleanedAPIKey: String {
         apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var providerSelector: some View {
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3),
+            spacing: 2
+        ) {
+            ForEach(AIProvider.allCases) { item in
+                Button {
+                    provider = item
+                } label: {
+                    Text(item.label)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(provider == item ? palette.textPrimary : palette.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(provider == item ? palette.surfaceElevated.opacity(0.72) : Color.clear)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(palette.surface.opacity(0.58))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(palette.borderSubtle, lineWidth: 0.8)
+        )
     }
 
     private var currentModel: String {

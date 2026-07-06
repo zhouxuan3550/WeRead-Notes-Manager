@@ -224,9 +224,7 @@ final class AchievementEngine {
     // MARK: - 持久化
 
     private static func fileURL() -> URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support.appendingPathComponent("书摘温故/achievements.json")
+        AppStoragePaths.file("achievements.json")
     }
 
     private func save() {

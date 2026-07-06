@@ -410,35 +410,63 @@ struct PremiumBackground: View {
     @Environment(\.themePalette) private var palette
 
     var body: some View {
-        ZStack {
-            palette.background
-
-            LinearGradient(
-                colors: [
-                    palette.heroGradient.first ?? palette.surface,
-                    Color.clear
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .opacity(0.6)
-
-            // 微妙的 mesh 渐变装饰点
-            RadialGradient(
-                colors: [palette.accent.opacity(0.06), Color.clear],
-                center: .topTrailing,
-                startRadius: 50,
-                endRadius: 500
-            )
-
-            RadialGradient(
-                colors: [palette.accent.opacity(0.04), Color.clear],
-                center: .bottomLeading,
-                startRadius: 50,
-                endRadius: 500
-            )
-        }
+        palette.background
         .ignoresSafeArea()
+    }
+}
+
+// MARK: - 扁平主题表面
+
+struct AppFieldSurface: ViewModifier {
+    @Environment(\.themePalette) private var palette
+    var cornerRadius: CGFloat = DesignSystem.CornerRadius.sm
+    var isActive = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(palette.surface.opacity(isActive ? 0.94 : 0.72))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(isActive ? palette.accent.opacity(0.42) : palette.borderSubtle, lineWidth: 0.8)
+            )
+    }
+}
+
+struct AppBadgeSurface: ViewModifier {
+    @Environment(\.themePalette) private var palette
+    var isActive = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                Capsule(style: .continuous)
+                    .fill(isActive ? palette.accentSoft.opacity(0.68) : palette.surfaceElevated.opacity(0.74))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(isActive ? palette.accent.opacity(0.36) : palette.borderSubtle, lineWidth: 0.8)
+            )
+    }
+}
+
+struct AppOptionSurface: ViewModifier {
+    @Environment(\.themePalette) private var palette
+    var isSelected = false
+    var cornerRadius: CGFloat = DesignSystem.CornerRadius.sm
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(isSelected ? palette.selectionBackground.opacity(0.52) : palette.surface.opacity(0.44))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(isSelected ? palette.accent.opacity(0.42) : palette.borderSubtle, lineWidth: 0.8)
+            )
     }
 }
 
@@ -554,6 +582,24 @@ extension View {
         height: CGFloat = 34
     ) -> some View {
         buttonStyle(FlatActionButtonStyle(style: style, height: height))
+    }
+
+    func appFieldSurface(
+        cornerRadius: CGFloat = DesignSystem.CornerRadius.sm,
+        isActive: Bool = false
+    ) -> some View {
+        modifier(AppFieldSurface(cornerRadius: cornerRadius, isActive: isActive))
+    }
+
+    func appBadgeSurface(isActive: Bool = false) -> some View {
+        modifier(AppBadgeSurface(isActive: isActive))
+    }
+
+    func appOptionSurface(
+        isSelected: Bool = false,
+        cornerRadius: CGFloat = DesignSystem.CornerRadius.sm
+    ) -> some View {
+        modifier(AppOptionSurface(isSelected: isSelected, cornerRadius: cornerRadius))
     }
 }
 

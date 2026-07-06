@@ -392,9 +392,7 @@ struct MistakeBook: Codable {
     }
 
     static var fileURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support.appendingPathComponent("书摘温故/mistake-book.json")
+        AppStoragePaths.file("mistake-book.json")
     }
 
     static func load() -> MistakeBook {

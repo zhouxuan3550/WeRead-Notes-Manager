@@ -83,7 +83,7 @@ struct QuickCaptureView: View {
                         .frame(minHeight: 60)
                         .scrollContentBackground(.hidden)
                         .padding(6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
+                        .appFieldSurface(cornerRadius: 6)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -95,7 +95,7 @@ struct QuickCaptureView: View {
                         .frame(minHeight: 40)
                         .scrollContentBackground(.hidden)
                         .padding(6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
+                        .appFieldSurface(cornerRadius: 6)
                 }
 
                 if let savedFeedback {

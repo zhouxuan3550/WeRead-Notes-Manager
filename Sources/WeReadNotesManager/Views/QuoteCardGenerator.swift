@@ -180,7 +180,7 @@ struct RedNoteStyle: View {
                     }
 
                     HStack {
-                        Text("📖 书摘温故")
+                        Text("📖 树懒书摘")
                             .font(.system(size: 24, weight: .medium))
                             .foregroundStyle(Color(red: 0.5, green: 0.3, blue: 0.4))
                         Spacer()
@@ -224,7 +224,7 @@ struct WechatStyle: View {
                         )
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("书摘温故")
+                        Text("树懒书摘")
                             .font(.system(size: 32, weight: .semibold))
                         Text(Date().shortString)
                             .font(.system(size: 22))
@@ -268,7 +268,7 @@ struct WechatStyle: View {
 
                 // 底部
                 HStack {
-                    Text("📚 来自「书摘温故」")
+                    Text("📚 来自「树懒书摘」")
                         .font(.system(size: 22))
                         .foregroundStyle(.gray)
                     Spacer()
@@ -305,7 +305,7 @@ struct TwitterStyle: View {
                         )
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("书摘温故")
+                        Text("树懒书摘")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundStyle(.white)
                         Text("@weread_notes")
@@ -552,7 +552,7 @@ struct GradientStyle: View {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("📖")
                             .font(.system(size: 50))
-                        Text("书摘温故")
+                        Text("树懒书摘")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.white)
                     }

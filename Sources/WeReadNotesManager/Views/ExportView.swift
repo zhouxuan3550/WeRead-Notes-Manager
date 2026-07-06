@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct ExportView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.themePalette) private var palette
 
     @State private var exportScope: ExportScope = .all
     @State private var exportFormat: ExportFormat = .pdf
@@ -79,7 +80,7 @@ struct ExportView: View {
                 .buttonStyle(.plain)
             }
 
-            GroupBox("范围") {
+            sectionBlock("范围") {
                 VStack(spacing: 8) {
                     ForEach(availableScopes) { scope in
                         optionRow(
@@ -92,19 +93,17 @@ struct ExportView: View {
                         }
                     }
                 }
-                .padding(.vertical, 4)
             }
 
-            GroupBox("格式") {
+            sectionBlock("格式") {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     ForEach(ExportFormat.allCases) { format in
                         formatButton(format)
                     }
                 }
-                .padding(.vertical, 4)
             }
 
-            GroupBox("模板") {
+            sectionBlock("模板") {
                 VStack(spacing: 8) {
                     ForEach(NoteTemplate.allCases) { item in
                         optionRow(
@@ -117,7 +116,6 @@ struct ExportView: View {
                         }
                     }
                 }
-                .padding(.vertical, 4)
             }
 
             Spacer()
@@ -150,7 +148,7 @@ struct ExportView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(.thinMaterial))
+                    .appBadgeSurface(isActive: true)
             }
 
             if template == .custom {
@@ -172,7 +170,7 @@ struct ExportView: View {
                 .font(.system(size: 13, design: .monospaced))
                 .scrollContentBackground(.hidden)
                 .padding(12)
-                .background(RoundedRectangle(cornerRadius: 8).fill(.black.opacity(0.16)))
+                .appFieldSurface()
                 .frame(minHeight: 180)
 
             Text("可用占位符：{{book}} {{author}} {{chapter}} {{quote}} {{thought}} {{location}} {{date}} {{favorite}} {{reviewCount}}")
@@ -192,8 +190,7 @@ struct ExportView: View {
                 .textSelection(.enabled)
                 .padding(18)
         }
-        .background(RoundedRectangle(cornerRadius: 8).fill(.black.opacity(0.16)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.08)))
+        .appFieldSurface()
     }
 
     private func formatButton(_ format: ExportFormat) -> some View {
@@ -207,8 +204,8 @@ struct ExportView: View {
                     .font(.system(size: 12, weight: .semibold))
             }
             .frame(maxWidth: .infinity, minHeight: 58)
-            .background(RoundedRectangle(cornerRadius: 8).fill(exportFormat == format ? Color.accentColor.opacity(0.26) : Color.white.opacity(0.06)))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(exportFormat == format ? Color.accentColor.opacity(0.55) : Color.white.opacity(0.08)))
+            .foregroundStyle(exportFormat == format ? palette.textPrimary : palette.textSecondary)
+            .appOptionSurface(isSelected: exportFormat == format)
         }
         .buttonStyle(.plain)
     }
@@ -224,7 +221,7 @@ struct ExportView: View {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .frame(width: 24)
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? palette.accent : palette.textSecondary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 13, weight: .semibold))
@@ -236,13 +233,27 @@ struct ExportView: View {
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(palette.accent)
                 }
             }
             .padding(9)
-            .background(RoundedRectangle(cornerRadius: 8).fill(isSelected ? Color.white.opacity(0.09) : Color.clear))
+            .appOptionSurface(isSelected: isSelected)
         }
         .buttonStyle(.plain)
+    }
+
+    private func sectionBlock<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(palette.textSecondary)
+            content()
+        }
+        .padding(12)
+        .glassPanel(cornerRadius: DesignSystem.CornerRadius.sm)
     }
 
     private func prepareExport() {

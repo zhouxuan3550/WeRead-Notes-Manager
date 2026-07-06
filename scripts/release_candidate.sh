@@ -18,5 +18,5 @@ scripts/package_dmg.sh "$VERSION" arm64
 scripts/package_dmg.sh "$VERSION" x86_64
 
 echo "==> Release candidate ready"
-echo "$ROOT_DIR/dist/WeReadNotesManager-$VERSION-arm64.dmg"
-echo "$ROOT_DIR/dist/WeReadNotesManager-$VERSION-x86_64.dmg"
+echo "$ROOT_DIR/dist/树懒书摘-$VERSION-arm64.dmg"
+echo "$ROOT_DIR/dist/树懒书摘-$VERSION-x86_64.dmg"

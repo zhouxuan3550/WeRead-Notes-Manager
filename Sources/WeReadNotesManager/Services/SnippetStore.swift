@@ -8,7 +8,7 @@ import SwiftUI
 // - "行动：明天..."
 // - "反方观点：..."
 //
-// 存储在 JSON：/Library/Application Support/书摘温故/snippets.json
+// 存储在 JSON：Application Support/树懒书摘/snippets.json
 
 struct Snippet: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
@@ -31,11 +31,7 @@ final class SnippetStore {
     }
 
     static var fileURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support
-            .appendingPathComponent("书摘温故", isDirectory: true)
-            .appendingPathComponent("snippets.json")
+        AppStoragePaths.file("snippets.json")
     }
 
     func load() {

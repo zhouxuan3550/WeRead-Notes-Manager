@@ -1,4 +1,4 @@
-# Makefile for 书摘温故 (WeReadNotesManager)
+# Makefile for 树懒书摘 (WeReadNotesManager)
 # Usage:
 #   make build      # swift build
 #   make test       # swift test
@@ -6,7 +6,7 @@
 #   make app        # build .app bundle (unsigned, for local testing)
 #   make dmg        # build signed/unsigned .dmg (set SIGNING_IDENTITY for signed)
 
-APP_NAME      := 书摘温故
+APP_NAME      := 树懒书摘
 EXEC_NAME     := WeReadNotesManager
 SCHEME        := WeReadNotesManager
 BUILD_DIR     := .build/release

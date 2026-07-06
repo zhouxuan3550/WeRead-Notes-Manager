@@ -90,7 +90,7 @@ struct OnboardingView: View {
             }
             .shadow(color: palette.accent.opacity(0.4), radius: 30, y: 12)
 
-            Text("欢迎来到书摘温故")
+            Text("欢迎来到树懒书摘")
                 .font(.system(size: 32, weight: .bold))
 
             Text("一款为深度阅读者打造的笔记工作空间\n支持微信读书同步、AI 问答、间隔复习、多端导出")

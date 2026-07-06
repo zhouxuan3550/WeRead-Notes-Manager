@@ -1,18 +1,18 @@
-# 书摘温故
+# 树懒书摘
 
 把微信读书里的划线、想法和书评，变成一个真正可复习、可检索、可写作的个人阅读工作台。
 
-如果你也有这种感觉：微信读书里收藏了很多句子，当时很受触动，过几天就沉进列表里，再也没被重新看见。**书摘温故** 想解决的就是这件事：让你的书摘不只是“存起来”，而是能被重新遇见、重新组织、重新使用。
+如果你也有这种感觉：微信读书里收藏了很多句子，当时很受触动，过几天就沉进列表里，再也没被重新看见。**树懒书摘** 想解决的就是这件事：让你的书摘不只是“存起来”，而是能被重新遇见、重新组织、重新使用。
 
 <p>
-  <a href="https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.0.10"><strong>下载最新版</strong></a>
+  <a href="https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1"><strong>下载最新版</strong></a>
   ·
   <a href="#主要功能">主要功能</a>
   ·
   <a href="#本地开发">本地开发</a>
 </p>
 
-<img width="2352" height="1676" alt="书摘温故界面预览" src="https://github.com/user-attachments/assets/b342b7f4-fbd1-4849-a0d7-17fe67b28abd" />
+<img width="2352" height="1676" alt="树懒书摘界面预览" src="https://github.com/user-attachments/assets/b342b7f4-fbd1-4849-a0d7-17fe67b28abd" />
 
 ## 适合谁
 
@@ -25,7 +25,7 @@
 
 大多数读书笔记工具都停在“收集”。但阅读真正有价值的部分，往往发生在第二次、第三次回看时。
 
-书摘温故围绕三个动作设计：
+树懒书摘围绕三个动作设计：
 
 1. **同步**：把微信读书里的书摘集中到本地。
 2. **整理**：按书籍、标签、收藏、复习状态组织内容。
@@ -69,10 +69,10 @@
 
 在 Release 页面下载对应版本：
 
-- Apple Silicon Mac：`WeReadNotesManager-1.0.10-arm64.dmg`
-- Intel Mac：`WeReadNotesManager-1.0.10-x86_64.dmg`
+- Apple Silicon Mac：`树懒书摘-<版本号>-arm64.dmg`
+- Intel Mac：`树懒书摘-<版本号>-x86_64.dmg`
 
-下载地址：[v1.0.10 Release](https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.0.10)
+下载地址：[v1.1 Release](https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1)
 
 ## 本地开发
 
@@ -86,8 +86,8 @@ swift run WeReadNotesManager
 项目提供了可复用的 DMG 打包脚本：
 
 ```bash
-scripts/package_dmg.sh 1.0.10 arm64
-scripts/package_dmg.sh 1.0.10 x86_64
+scripts/package_dmg.sh 1.1 arm64
+scripts/package_dmg.sh 1.1 x86_64
 ```
 
 生成的安装包会输出到 `dist/` 目录。

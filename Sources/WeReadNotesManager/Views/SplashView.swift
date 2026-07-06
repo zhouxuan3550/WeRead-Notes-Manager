@@ -61,7 +61,7 @@ struct SplashView: View {
                 .scaleEffect(scale)
 
                 VStack(spacing: 8) {
-                    Text("书摘温故")
+                    Text("树懒书摘")
                         .font(.system(size: 36, weight: .bold))
                         .foregroundStyle(palette.textPrimary)
 

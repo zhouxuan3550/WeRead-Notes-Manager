@@ -9,7 +9,7 @@ import SwiftUI
 // - 跨书反复出现的核心概念
 //
 // 存储在 JSON：
-//   /Library/Application Support/书摘温故/vocabulary.json
+//   Application Support/树懒书摘/vocabulary.json
 
 struct VocabularyEntry: Codable, Identifiable, Hashable {
     var id: String { word }
@@ -27,11 +27,7 @@ struct VocabularyStore: Codable {
     var entries: [VocabularyEntry] = []
 
     static var fileURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support
-            .appendingPathComponent("书摘温故", isDirectory: true)
-            .appendingPathComponent("vocabulary.json")
+        AppStoragePaths.file("vocabulary.json")
     }
 
     static func load() -> VocabularyStore {

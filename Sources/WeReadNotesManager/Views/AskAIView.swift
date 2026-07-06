@@ -53,8 +53,9 @@ struct AskAIView: View {
         HStack(spacing: 12) {
             Image(systemName: "sparkles")
                 .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(palette.accent)
                 .frame(width: 38, height: 38)
-                .background(RoundedRectangle(cornerRadius: 10).fill(.blue.opacity(0.18)))
+                .appOptionSurface(isSelected: true, cornerRadius: DesignSystem.CornerRadius.sm)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("问 AI")
@@ -139,8 +140,11 @@ struct AskAIView: View {
     }
 
     private var providerSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(AIProvider.allCases.enumerated()), id: \.element) { index, item in
+        LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3),
+            spacing: 2
+        ) {
+            ForEach(AIProvider.allCases) { item in
                 Button {
                     provider = item
                 } label: {
@@ -155,12 +159,6 @@ struct AskAIView: View {
                         )
                 }
                 .buttonStyle(.plain)
-
-                if index < AIProvider.allCases.count - 1 {
-                    Rectangle()
-                        .fill(palette.borderSubtle)
-                        .frame(width: 0.8, height: 16)
-                }
             }
         }
         .padding(2)
@@ -184,7 +182,7 @@ struct AskAIView: View {
                 .frame(minHeight: 110)
                 .scrollContentBackground(.hidden)
                 .padding(8)
-                .background(RoundedRectangle(cornerRadius: 8).fill(.thinMaterial))
+                .appFieldSurface()
 
             HStack {
                 if let statusMessage {

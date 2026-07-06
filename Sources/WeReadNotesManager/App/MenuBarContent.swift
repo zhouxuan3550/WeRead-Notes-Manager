@@ -42,7 +42,7 @@ struct MenuBarContent: View {
                     Image(systemName: "books.vertical.fill")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(palette.accent)
-                    Text("书摘温故")
+                    Text("树懒书摘")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(palette.textPrimary)
                 }

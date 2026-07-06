@@ -530,7 +530,7 @@ struct AIWritingAssistantView: View {
 
     private func shareViaEmail() {
         #if canImport(AppKit)
-        let subject = "【书摘温故】\(selectedGenre.rawValue) · \(topic)"
+        let subject = "【树懒书摘】\(selectedGenre.rawValue) · \(topic)"
         let body = renderAsMarkdown()
         let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
@@ -572,7 +572,7 @@ struct AIWritingAssistantView: View {
     private func renderAsMarkdown() -> String {
         let date = Date().shortString
         var md = "# \(selectedGenre.rawValue) · \(topic)\n\n"
-        md += "_生成于 \(date) · 书摘温故_\n\n"
+        md += "_生成于 \(date) · 树懒书摘_\n\n"
         md += "---\n\n"
         md += output
         md += "\n\n---\n\n"
@@ -594,7 +594,7 @@ struct AIWritingAssistantView: View {
         return """
         <html><body style="font-family: -apple-system, sans-serif; line-height: 1.7; padding: 24px;">
         <h1>\(selectedGenre.rawValue) · \(topic)</h1>
-        <p><em>生成于书摘温故</em></p>
+        <p><em>生成于树懒书摘</em></p>
         <hr/>
         <p>\(escaped)</p>
         </body></html>

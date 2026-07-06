@@ -16,7 +16,7 @@ struct CloudSyncSummary: Sendable {
 }
 
 enum ICloudSyncService {
-    private static let folderName = "书摘温故"
+    private static let folderName = "树懒书摘"
     private static let snapshotFileName = "library-snapshot.json"
 
     static func cloudDirectory() throws -> URL {

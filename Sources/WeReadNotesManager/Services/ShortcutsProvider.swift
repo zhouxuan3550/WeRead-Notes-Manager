@@ -7,7 +7,7 @@ import AppKit
 //
 // 用户可以通过 Siri 或 Shortcuts App 调用：
 // - "Hey Siri, 今天复习几条" → 返回待复习数
-// - "Hey Siri, 打开书摘温故"
+// - "Hey Siri, 打开树懒书摘"
 // - Shortcuts 里把笔记导出为 Markdown / Obsidian
 //
 // 通过 AppIntents 框架实现（macOS 13+）。
@@ -15,8 +15,8 @@ import AppKit
 // MARK: - 1. 打开主窗口
 
 struct OpenMainWindowIntent: AppIntent {
-    static var title: LocalizedStringResource = "打开书摘温故"
-    static var description = IntentDescription("打开书摘温故主窗口")
+    static var title: LocalizedStringResource = "打开树懒书摘"
+    static var description = IntentDescription("打开树懒书摘主窗口")
     static var openAppWhenRun: Bool = true
 
     func perform() async throws -> some IntentResult {
@@ -120,7 +120,7 @@ struct WeReadShortcutsProvider: AppShortcutsProvider {
                 "打开 \(.applicationName)",
                 "启动 \(.applicationName)"
             ],
-            shortTitle: "打开书摘温故",
+            shortTitle: "打开树懒书摘",
             systemImageName: "books.vertical"
         )
 

@@ -65,7 +65,7 @@ struct ExporterPlugin: Codable, Identifiable, Hashable {
 
             {{note.userNote}}
             """,
-            author: "书摘温故",
+            author: "树懒书摘",
             version: "1.0",
             isBuiltIn: true
         ),
@@ -78,7 +78,7 @@ struct ExporterPlugin: Codable, Identifiable, Hashable {
             contentType: "tsv",
             template: "{{notes}}",
             noteTemplate: "{{note.highlight}}\t{{note.userNote}}\t{{book.title}}",
-            author: "书摘温故",
+            author: "树懒书摘",
             version: "1.0",
             isBuiltIn: true
         ),
@@ -91,7 +91,7 @@ struct ExporterPlugin: Codable, Identifiable, Hashable {
             contentType: "csv",
             template: "highlight,userNote,book,author,chapter,date,tags\n{{notes}}",
             noteTemplate: "\"\\{\\{note.highlight\\}\\}\",\"\\{\\{note.userNote\\}\\}\",\"\\{\\{book.title\\}\\}\",\"\\{\\{book.author\\}\\}\",\"\\{\\{note.chapter\\}\\}\",\"\\{\\{date\\}\\}\",\"\\{\\{note.tags\\}\\}\"",
-            author: "书摘温故",
+            author: "树懒书摘",
             version: "1.0",
             isBuiltIn: true
         )
@@ -112,9 +112,7 @@ final class PluginStore {
     }
 
     static var directoryURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support.appendingPathComponent("书摘温故/Plugins", isDirectory: true)
+        AppStoragePaths.directory("Plugins")
     }
 
     func load() {

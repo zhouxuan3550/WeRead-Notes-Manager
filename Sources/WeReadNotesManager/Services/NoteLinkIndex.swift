@@ -19,11 +19,7 @@ struct NoteLinkIndex: Codable {
     var backward: [String: [String]] = [:]
 
     static var fileURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support
-            .appendingPathComponent("书摘温故", isDirectory: true)
-            .appendingPathComponent("link-index.json")
+        AppStoragePaths.file("link-index.json")
     }
 
     static func load() -> NoteLinkIndex {

@@ -7,20 +7,13 @@ import SwiftUI
 // 把粘贴的截图保存到 Application Support 目录，
 // 在 SwiftData 之外用 JSON 索引管理关联。
 //
-// 路径：~/Library/Application Support/书摘温故/Attachments/<uuid>.png
+// 路径：Application Support/树懒书摘/Attachments/<uuid>.png
 
 enum ImageAttachmentService {
     static let directoryName = "Attachments"
 
     static var attachmentsDirectory: URL {
-        let fm = FileManager.default
-        let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        let dir = support
-            .appendingPathComponent("书摘温故", isDirectory: true)
-            .appendingPathComponent(directoryName, isDirectory: true)
-        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
+        AppStoragePaths.directory(directoryName)
     }
 
     /// 保存图片，返回相对路径（用于索引）。
@@ -77,11 +70,7 @@ struct AttachmentIndex: Codable {
     }
 
     static var fileURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory())
-        return support
-            .appendingPathComponent("书摘温故", isDirectory: true)
-            .appendingPathComponent("attachment-index.json")
+        AppStoragePaths.file("attachment-index.json")
     }
 
     static func load() -> AttachmentIndex {

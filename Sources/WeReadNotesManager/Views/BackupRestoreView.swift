@@ -338,7 +338,7 @@ struct BackupRestoreView: View {
         if let type = UTType(filenameExtension: "wread") {
             panel.allowedContentTypes = [type]
         }
-        panel.nameFieldStringValue = "书摘温故-备份-\(Date().shortString).wread"
+        panel.nameFieldStringValue = "树懒书摘-备份-\(Date().shortString).wread"
         if panel.runModal() == .OK, let url = panel.url {
             do {
                 try BackupPackage.export(to: url, container: modelContainer)

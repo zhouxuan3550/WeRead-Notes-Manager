@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - 扁平纸面侧栏
 
@@ -63,12 +64,21 @@ struct LiquidGlassSidebar: View {
 
     private var topSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 9) {
-                LineIcon(path: LineIconPath.book(), size: 18, strokeWidth: 1.6, color: palette.textPrimary)
-                    .frame(width: 22, height: 22)
+            HStack(spacing: 12) {
+                SidebarBrandLogo()
+                    .padding(5)
+                    .frame(width: 54, height: 54)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.clear)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(palette.accent.opacity(0.45), lineWidth: 1)
+                    }
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("书摘温故")
+                    Text("树懒书摘")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(palette.textPrimary)
                         .tracking(0)
@@ -79,6 +89,7 @@ struct LiquidGlassSidebar: View {
                 }
             }
             .padding(.horizontal, 18)
+            .padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Rectangle()
@@ -140,6 +151,30 @@ struct LiquidGlassSidebar: View {
 
 }
 
+private struct SidebarBrandLogo: View {
+    private var image: NSImage? {
+        guard let url = Bundle.module.url(forResource: "SidebarLogo", withExtension: "png") else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
+    }
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(systemName: "book.closed")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(ThemePalette.brandBlue)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 // MARK: - 侧栏行（从旧 EnhancedSidebar 迁移，保留复用）
 
 struct EnhancedSidebarRow: View {
@@ -153,22 +188,29 @@ struct EnhancedSidebarRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 9) {
-                ZStack {
-                    iconForItem(item)
-                        .foregroundStyle(iconColor)
-                        .frame(width: 16, height: 16)
+            HStack(spacing: 8) {
+                Capsule()
+                    .fill(isSelected ? palette.accent : Color.clear)
+                    .frame(width: 3, height: 18)
+
+                HStack(spacing: 9) {
+                    ZStack {
+                        iconForItem(item)
+                            .foregroundStyle(iconColor)
+                            .frame(width: 16, height: 16)
+                    }
+                    .frame(width: 24, height: 24, alignment: .center)
+
+                    Text(item.label)
+                        .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(textColor)
+                        .tracking(0)
+
+                    Spacer(minLength: 4)
                 }
-                .frame(width: 24, height: 24, alignment: .center)
-
-                Text(item.label)
-                    .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
-                    .foregroundStyle(textColor)
-                    .tracking(0)
-
-                Spacer(minLength: 4)
             }
-            .padding(.horizontal, 10)
+            .padding(.leading, 4)
+            .padding(.trailing, 10)
             .frame(height: 34)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -177,7 +219,7 @@ struct EnhancedSidebarRow: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .stroke(
-                        isSelected ? palette.borderMedium : Color.clear,
+                        isSelected ? palette.accent.opacity(0.28) : Color.clear,
                         lineWidth: 0.5
                     )
             )
@@ -191,18 +233,18 @@ struct EnhancedSidebarRow: View {
 
     private var backgroundFill: Color {
         if isSelected {
-            return palette.textPrimary.opacity(0.075)
+            return palette.accentSoft
         } else if isHovering {
-            return palette.textPrimary.opacity(0.045)
+            return palette.accent.opacity(0.08)
         }
         return .clear
     }
 
     private var iconColor: Color {
         if isSelected {
-            return palette.textPrimary
+            return palette.accent
         } else if isHovering {
-            return palette.textSecondary
+            return palette.accent.opacity(0.88)
         }
         return palette.textTertiary
     }
@@ -211,7 +253,7 @@ struct EnhancedSidebarRow: View {
         if isSelected {
             return palette.textPrimary
         } else if isHovering {
-            return palette.textPrimary.opacity(0.9)
+            return palette.textPrimary.opacity(0.92)
         }
         return palette.textSecondary
     }

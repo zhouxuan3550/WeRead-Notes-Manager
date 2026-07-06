@@ -6,6 +6,7 @@ import AppKit
 struct CrossNoteAskView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.themePalette) private var palette
     @Query(sort: \Book.updatedAt, order: .reverse) private var allBooks: [Book]
 
     @AppStorage("aiProvider") private var aiProviderRaw = AIProvider.openAI.rawValue
@@ -156,7 +157,7 @@ struct CrossNoteAskView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
-        .background(DesignSystem.Colors.surface.opacity(0.3))
+        .background(palette.surface.opacity(0.30))
     }
 
     private var aiProcessingPanel: some View {
@@ -218,10 +219,7 @@ struct CrossNoteAskView: View {
                     .frame(minHeight: 70)
                     .scrollContentBackground(.hidden)
                     .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(DesignSystem.Colors.surface.opacity(0.5))
-                    )
+                    .appFieldSurface()
 
                 HStack {
                     Text("基于已选笔记语义检索最相关片段作答")
@@ -280,8 +278,7 @@ struct CrossNoteAskView: View {
                             .padding(16)
                     }
                 }
-                .background(DesignSystem.Colors.surface.opacity(0.5))
-                .cornerRadius(10)
+                .appFieldSurface(cornerRadius: DesignSystem.CornerRadius.lg)
 
                 if !citations.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
@@ -303,10 +300,7 @@ struct CrossNoteAskView: View {
                                     Spacer()
                                 }
                                 .padding(8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(DesignSystem.Colors.surfaceElevated.opacity(0.7))
-                                )
+                                .appOptionSurface()
                             }
                             .buttonStyle(.plain)
                         }
@@ -548,10 +542,7 @@ private struct NoteSelectionRow: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? DesignSystem.Colors.accent.opacity(0.16) : DesignSystem.Colors.surface.opacity(0.55))
-            )
+            .appOptionSurface(isSelected: isSelected)
         }
         .buttonStyle(.plain)
     }

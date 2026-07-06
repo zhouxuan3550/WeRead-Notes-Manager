@@ -55,6 +55,7 @@ enum AppThemeID: String, CaseIterable, Identifiable, Codable {
 // MARK: - 主题调色板
 
 struct ThemePalette: Equatable {
+    static let brandBlue = Color(red: 0.29, green: 0.62, blue: 0.85) // #4A9FD8
     /// 主背景（最底层）
     let background: Color
     /// 次级背景（卡片）
@@ -103,23 +104,23 @@ struct ThemePalette: Equatable {
         textPrimary: Color.white.opacity(0.92),
         textSecondary: Color.white.opacity(0.60),
         textTertiary: Color.white.opacity(0.38),
-        accent: Color(red: 0.36, green: 0.55, blue: 0.93), // #5B8DEF
-        accentSoft: Color(red: 0.36, green: 0.55, blue: 0.93).opacity(0.14),
+        accent: ThemePalette.brandBlue,
+        accentSoft: ThemePalette.brandBlue.opacity(0.16),
         success: Color(red: 0.34, green: 0.78, blue: 0.56),
         warning: Color(red: 0.95, green: 0.68, blue: 0.34),
         error: Color(red: 0.95, green: 0.42, blue: 0.42),
         borderSubtle: Color.white.opacity(0.06),
         borderMedium: Color.white.opacity(0.10),
         borderStrong: Color.white.opacity(0.16),
-        selectionBackground: Color(red: 0.36, green: 0.55, blue: 0.93).opacity(0.18),
+        selectionBackground: ThemePalette.brandBlue.opacity(0.18),
         heroGradient: [
             Color(red: 0.10, green: 0.16, blue: 0.28),
             Color(red: 0.06, green: 0.07, blue: 0.10)
         ],
         meshColors: [
-            Color(red: 0.36, green: 0.55, blue: 0.93),
-            Color(red: 0.78, green: 0.45, blue: 0.92),
-            Color(red: 0.30, green: 0.78, blue: 0.85)
+            ThemePalette.brandBlue,
+            Color(red: 0.86, green: 0.94, blue: 0.98),
+            Color(red: 0.56, green: 0.42, blue: 0.31)
         ],
         displayFont: .system(size: 34, weight: .bold, design: .default),
         bodyFont: .system(size: 15, weight: .regular, design: .default),
@@ -134,23 +135,23 @@ struct ThemePalette: Equatable {
         textPrimary: Color(red: 0.18, green: 0.13, blue: 0.08),
         textSecondary: Color(red: 0.36, green: 0.28, blue: 0.18),
         textTertiary: Color(red: 0.52, green: 0.44, blue: 0.32),
-        accent: Color(red: 0.64, green: 0.23, blue: 0.18), // 朱砂
-        accentSoft: Color(red: 0.64, green: 0.23, blue: 0.18).opacity(0.12),
+        accent: ThemePalette.brandBlue,
+        accentSoft: ThemePalette.brandBlue.opacity(0.14),
         success: Color(red: 0.30, green: 0.55, blue: 0.30),
         warning: Color(red: 0.82, green: 0.50, blue: 0.18),
         error: Color(red: 0.78, green: 0.22, blue: 0.22),
         borderSubtle: Color.black.opacity(0.08),
         borderMedium: Color.black.opacity(0.12),
         borderStrong: Color.black.opacity(0.20),
-        selectionBackground: Color(red: 0.64, green: 0.23, blue: 0.18).opacity(0.14),
+        selectionBackground: ThemePalette.brandBlue.opacity(0.14),
         heroGradient: [
             Color(red: 0.92, green: 0.85, blue: 0.70),
             Color(red: 0.96, green: 0.93, blue: 0.86)
         ],
         meshColors: [
-            Color(red: 0.64, green: 0.23, blue: 0.18),
-            Color(red: 0.82, green: 0.50, blue: 0.18),
-            Color(red: 0.30, green: 0.45, blue: 0.20)
+            ThemePalette.brandBlue,
+            Color(red: 0.86, green: 0.94, blue: 0.98),
+            Color(red: 0.56, green: 0.42, blue: 0.31)
         ],
         displayFont: .system(size: 34, weight: .bold, design: .serif),
         bodyFont: .system(size: 15, weight: .regular, design: .serif),
@@ -165,22 +166,22 @@ struct ThemePalette: Equatable {
         textPrimary: Color.white.opacity(0.92),
         textSecondary: Color.white.opacity(0.55),
         textTertiary: Color.white.opacity(0.35),
-        accent: Color.white.opacity(0.85),
-        accentSoft: Color.white.opacity(0.10),
+        accent: ThemePalette.brandBlue,
+        accentSoft: ThemePalette.brandBlue.opacity(0.16),
         success: Color(red: 0.70, green: 0.78, blue: 0.70),
         warning: Color(red: 0.85, green: 0.78, blue: 0.60),
         error: Color(red: 0.85, green: 0.62, blue: 0.62),
         borderSubtle: Color.white.opacity(0.06),
         borderMedium: Color.white.opacity(0.10),
         borderStrong: Color.white.opacity(0.16),
-        selectionBackground: Color.white.opacity(0.12),
+        selectionBackground: ThemePalette.brandBlue.opacity(0.16),
         heroGradient: [
             Color(red: 0.18, green: 0.18, blue: 0.18),
             Color(red: 0.10, green: 0.10, blue: 0.10)
         ],
         meshColors: [
-            Color.white.opacity(0.65),
-            Color.white.opacity(0.30),
+            ThemePalette.brandBlue,
+            Color(red: 0.86, green: 0.94, blue: 0.98),
             Color.white.opacity(0.45)
         ],
         displayFont: .system(size: 34, weight: .bold, design: .default),
@@ -196,23 +197,23 @@ struct ThemePalette: Equatable {
         textPrimary: Color(red: 0.92, green: 0.96, blue: 0.94),
         textSecondary: Color(red: 0.62, green: 0.72, blue: 0.66),
         textTertiary: Color(red: 0.38, green: 0.48, blue: 0.42),
-        accent: Color(red: 0.48, green: 0.85, blue: 0.62), // #7AD89E
-        accentSoft: Color(red: 0.48, green: 0.85, blue: 0.62).opacity(0.14),
+        accent: ThemePalette.brandBlue,
+        accentSoft: ThemePalette.brandBlue.opacity(0.15),
         success: Color(red: 0.56, green: 0.88, blue: 0.66),
         warning: Color(red: 0.95, green: 0.78, blue: 0.40),
         error: Color(red: 0.92, green: 0.46, blue: 0.46),
         borderSubtle: Color.white.opacity(0.06),
         borderMedium: Color.white.opacity(0.10),
         borderStrong: Color.white.opacity(0.16),
-        selectionBackground: Color(red: 0.48, green: 0.85, blue: 0.62).opacity(0.16),
+        selectionBackground: ThemePalette.brandBlue.opacity(0.17),
         heroGradient: [
             Color(red: 0.10, green: 0.22, blue: 0.18),
             Color(red: 0.05, green: 0.10, blue: 0.08)
         ],
         meshColors: [
-            Color(red: 0.48, green: 0.85, blue: 0.62),
-            Color(red: 0.20, green: 0.60, blue: 0.50),
-            Color(red: 0.78, green: 0.92, blue: 0.42)
+            ThemePalette.brandBlue,
+            Color(red: 0.86, green: 0.94, blue: 0.98),
+            Color(red: 0.56, green: 0.42, blue: 0.31)
         ],
         displayFont: .system(size: 34, weight: .bold, design: .default),
         bodyFont: .system(size: 15, weight: .regular, design: .default),

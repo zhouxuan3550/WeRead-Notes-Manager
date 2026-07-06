@@ -211,7 +211,7 @@ struct DueNotesWidgetView: View {
             Spacer()
             HStack(spacing: 4) {
                 Image(systemName: "books.vertical.fill")
-                Text("书摘温故")
+                Text("树懒书摘")
             }
             .font(.system(size: 9, weight: .semibold))
             .foregroundStyle(textPrimary.opacity(0.5))
@@ -312,7 +312,7 @@ struct DueNotesWidgetView: View {
 
             Spacer()
             HStack {
-                Text("书摘温故")
+                Text("树懒书摘")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(textPrimary.opacity(0.5))
                 Spacer()
@@ -347,7 +347,7 @@ struct DueNotesWidget: Widget {
             DueNotesWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("书摘温故 · 待复习")
+        .configurationDisplayName("树懒书摘 · 待复习")
         .description("一眼看到今天的复习任务")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }

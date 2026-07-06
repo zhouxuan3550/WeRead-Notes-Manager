@@ -17,14 +17,14 @@ case "$ARCH" in
     ;;
 esac
 
-APP_NAME="书摘温故"
+APP_NAME="树懒书摘"
 EXECUTABLE_NAME="WeReadNotesManager"
 BUNDLE_ID="com.weread.notesmanager"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/$APP_NAME-$ARCH.app"
 STAGE_DIR="$DIST_DIR/dmg-stage-$ARCH"
-ASSET_NAME="WeReadNotesManager-$VERSION-$ARCH.dmg"
+ASSET_NAME="$APP_NAME-$VERSION-$ARCH.dmg"
 DMG_PATH="$DIST_DIR/$ASSET_NAME"
 ICON_PATH="$ROOT_DIR/Sources/WeReadNotesManager/Resources/AppIcon.icns"
 

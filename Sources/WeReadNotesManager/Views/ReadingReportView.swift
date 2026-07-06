@@ -103,7 +103,7 @@ struct FlowTags: View {
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(Capsule().fill(.ultraThinMaterial))
+                    .appBadgeSurface()
             }
         }
     }

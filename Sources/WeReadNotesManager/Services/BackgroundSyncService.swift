@@ -88,7 +88,7 @@ final class BackgroundSyncService {
 
         let content = UNMutableNotificationContent()
         content.title = "微信读书同步提醒"
-        content.body = "点击让 书摘温故 拉取最新的划线和想法。"
+        content.body = "点击让 树懒书摘 拉取最新的划线和想法。"
         content.sound = .default
 
         var trigger = DateComponents()

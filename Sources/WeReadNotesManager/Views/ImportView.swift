@@ -7,6 +7,7 @@ struct ImportView: View {
     @Environment(AppViewModel.self) private var appVM
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.themePalette) private var palette
     @State private var importResult: ImportResultSummary?
     @State private var isImporting = false
     @State private var apiKey = Self.initialAPIKey()
@@ -92,8 +93,9 @@ struct ImportView: View {
             HStack(spacing: 12) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(palette.accent)
                     .frame(width: 34, height: 34)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(.blue.opacity(0.14)))
+                    .appOptionSurface(isSelected: true)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("微信读书 Skill 同步")
@@ -116,6 +118,7 @@ struct ImportView: View {
                 } label: {
                     Label("粘贴 Key", systemImage: "doc.on.clipboard")
                 }
+                .flatActionButton(height: 32)
                 .disabled(isImporting)
 
                 Button {
@@ -146,7 +149,6 @@ struct ImportView: View {
                     .flatActionButton(height: 32)
                 }
             }
-            .flatActionButton(height: 32)
 
             if let syncMessage {
                 Text(syncMessage)
@@ -179,8 +181,9 @@ struct ImportView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(palette.textSecondary)
                 .frame(width: 34, height: 34)
-                .background(RoundedRectangle(cornerRadius: 8).fill(.ultraThinMaterial))
+                .appOptionSurface()
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -263,7 +266,7 @@ struct ImportView: View {
         }
         .frame(minWidth: 54, alignment: .leading)
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 7).fill(.ultraThinMaterial))
+        .appOptionSurface()
     }
 
     private func chooseFile(_ kind: ImportKind) {
