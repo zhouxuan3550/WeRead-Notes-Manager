@@ -36,7 +36,6 @@ struct LiquidGlassSidebar: View {
                         sidebarItem(.readingReport)
                         sidebarItem(.askAI)
                         sidebarItem(.writingCards)
-                        sidebarItem(.shareCardStudio)
                     }
 
                     sidebarGroup("数据") {
@@ -77,7 +76,7 @@ struct LiquidGlassSidebar: View {
                             .stroke(palette.accent.opacity(0.45), lineWidth: 1)
                     }
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("树懒书摘")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(palette.textPrimary)
@@ -275,7 +274,6 @@ struct EnhancedSidebarRow: View {
         case .writingCards: return LineIcon(path: LineIconPath.stack(), size: 16)
         case .askAI: return LineIcon(path: LineIconPath.sparkle(), size: 16)
         case .writingAssistant: return LineIcon(path: LineIconPath.sparkleFour(), size: 16)
-        case .shareCardStudio: return LineIcon(path: LineIconPath.chart(), size: 16)
         case .trash: return LineIcon(path: LineIconPath.trash(), size: 16)
         case .syncHistory: return LineIcon(path: LineIconPath.refresh(), size: 16)
         case .settings: return LineIcon(path: LineIconPath.gear(), size: 16)

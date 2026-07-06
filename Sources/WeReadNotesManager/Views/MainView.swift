@@ -168,8 +168,6 @@ struct MainView: View {
             CrossNoteAskView()
         case .writingAssistant:
             AIWritingAssistantView()
-        case .shareCardStudio:
-            ShareCardStudioView()
         case .trash:
             TrashView()
         case .syncHistory:

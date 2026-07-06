@@ -17,7 +17,6 @@ struct NoteDetailView: View {
     @State private var showAskAI = false
     @State private var showExportOptions = false
     @State private var showWritingCard = false
-    @State private var showShareCard = false
 
     var body: some View {
         ScrollView {
@@ -43,9 +42,6 @@ struct NoteDetailView: View {
         }
         .sheet(isPresented: $showWritingCard) {
             WritingCardGeneratorView(note: note)
-        }
-        .sheet(isPresented: $showShareCard) {
-            ShareCardStudioView(note: note)
         }
         .alert("导出失败", isPresented: Binding(
             get: { exportError != nil },
@@ -302,12 +298,6 @@ struct NoteDetailView: View {
                         showWritingCard = true
                     } label: {
                         Label("生成素材卡", systemImage: "rectangle.stack")
-                    }
-
-                    Button {
-                        showShareCard = true
-                    } label: {
-                        Label("制作分享卡片", systemImage: "photo.artframe")
                     }
 
                     Button {

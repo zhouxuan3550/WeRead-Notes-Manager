@@ -5,9 +5,11 @@
 如果你也有这种感觉：微信读书里收藏了很多句子，当时很受触动，过几天就沉进列表里，再也没被重新看见。**树懒书摘** 想解决的就是这件事：让你的书摘不只是“存起来”，而是能被重新遇见、重新组织、重新使用。
 
 <p>
-  <a href="https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1"><strong>下载最新版</strong></a>
+  <a href="https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1.1-beta"><strong>下载 1.1.1 Beta</strong></a>
   ·
   <a href="#主要功能">主要功能</a>
+  ·
+  <a href="#隐私与安全">隐私与安全</a>
   ·
   <a href="#本地开发">本地开发</a>
 </p>
@@ -37,6 +39,8 @@
 
 通过微信读书 Skill API Key 导入书籍、划线、想法和书评。导入时支持跳过重复笔记，也可以过滤笔记过少的书，避免书架被零散内容淹没。
 
+应用启动后不会自动拉取微信读书内容，你可以先直接进入书摘库阅读，需要更新时再从首页或导入面板手动同步。
+
 ### 书籍中心
 
 按书组织所有笔记，快速查看一本书里的划线、想法、章节和收藏内容。适合做单本书复盘，也适合在写作前重新翻材料。
@@ -51,7 +55,7 @@
 
 ### AI 问答与写作
 
-支持 OpenAI、DeepSeek、GLM。你可以围绕一条或多条笔记提问、总结、提炼行动建议，也可以把书摘整理成文章素材。
+支持 OpenAI、DeepSeek、GLM、MiniMax、阿里云百炼和豆包。你可以围绕一条或多条笔记提问、总结、提炼行动建议，也可以把书摘整理成文章素材。
 
 ### 阅读报告
 
@@ -65,6 +69,15 @@
 
 应用是 macOS 原生应用。API Key 等敏感信息不会打进安装包，运行时配置保存在你的本机环境中。
 
+## 隐私与安全
+
+- 安装包不包含你的微信读书 Key 或任何 AI API Key。
+- API Key 保存到 macOS Keychain，不会写入仓库、README 或 DMG 构建脚本。
+- 书摘数据默认保存在本机 Application Support 目录。
+- iCloud 快照需要你在设置里手动开启，开启后才会把本地书摘库快照写入 iCloud Drive。
+- AI 功能只在你主动点击问答、总结或写作相关操作时调用对应供应商接口；发送内容取决于你选择的笔记和问题。
+- 当前 DMG 使用本地打包签名，Beta 阶段可能出现 macOS 安全提示。后续公开正式版建议接入 Developer ID 签名与 notarization。
+
 ## 下载安装
 
 在 Release 页面下载对应版本：
@@ -72,7 +85,7 @@
 - Apple Silicon Mac：`树懒书摘-<版本号>-arm64.dmg`
 - Intel Mac：`树懒书摘-<版本号>-x86_64.dmg`
 
-下载地址：[v1.1 Release](https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1)
+下载地址：[v1.1.1-beta Release](https://github.com/zhouxuan3550/WeRead-Notes-Manager/releases/tag/v1.1.1-beta)
 
 ## 本地开发
 
@@ -86,15 +99,15 @@ swift run WeReadNotesManager
 项目提供了可复用的 DMG 打包脚本：
 
 ```bash
-scripts/package_dmg.sh 1.1 arm64
-scripts/package_dmg.sh 1.1 x86_64
+scripts/package_dmg.sh 1.1.1 arm64
+scripts/package_dmg.sh 1.1.1 x86_64
 ```
 
 生成的安装包会输出到 `dist/` 目录。
 
 ## 状态
 
-当前版本是发布候选版。核心流程已经可以使用，但仍建议先备份重要笔记数据，再进行大规模导入。
+当前版本是 `1.1.1 Beta`。核心流程已经可以给第一批用户试用，但仍建议先备份重要笔记数据，再进行大规模导入。
 
 欢迎提交 issue，尤其是同步失败、导入异常、界面错位和崩溃日志。
 

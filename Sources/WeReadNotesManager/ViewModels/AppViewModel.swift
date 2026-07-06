@@ -117,7 +117,7 @@ final class AppViewModel {
                 case .books:
                     base = selectedBook?.notes ?? allNotes
                 case .dashboard, .mindMap, .readingReport, .syncHistory, .settings,
-                     .tags, .topicClusters, .knowledgeGraph, .writingCards, .shareCardStudio,
+                     .tags, .topicClusters, .knowledgeGraph, .writingCards,
                      .askAI, .writingAssistant, .trash, .none:
                     base = []
                 }

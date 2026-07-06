@@ -16,7 +16,6 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
     case writingCards
     case askAI
     case writingAssistant
-    case shareCardStudio
     case trash
     case syncHistory
     case settings
@@ -40,7 +39,6 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
         case .writingCards: return "素材卡"
         case .askAI: return "AI 工作台"
         case .writingAssistant: return "AI 写作"
-        case .shareCardStudio: return "卡片工厂"
         case .trash: return "回收站"
         case .syncHistory: return "同步历史"
         case .settings: return "设置"
@@ -64,7 +62,6 @@ enum SidebarItem: Hashable, CaseIterable, Identifiable {
         case .writingCards: return "rectangle.stack"
         case .askAI: return "sparkles"
         case .writingAssistant: return "wand.and.stars"
-        case .shareCardStudio: return "photo.artframe"
         case .trash: return "trash"
         case .syncHistory: return "clock.arrow.circlepath"
         case .settings: return "gearshape.fill"

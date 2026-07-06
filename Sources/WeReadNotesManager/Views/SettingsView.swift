@@ -104,6 +104,16 @@ struct SettingsView: View {
                         }
                     }
                     Toggle("导入后自动打开书籍", isOn: $autoOpenAfterImport)
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(palette.accent)
+                            .frame(width: 18)
+                        Text("启动时不会自动同步微信读书，避免每次打开都被同步流程打断；需要更新时，在首页或导入面板手动同步。")
+                            .font(.system(size: 12))
+                            .foregroundStyle(palette.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 
                 Divider().padding(.vertical, 4)
                 

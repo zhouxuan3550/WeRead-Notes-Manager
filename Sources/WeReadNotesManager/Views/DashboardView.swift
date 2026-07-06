@@ -229,7 +229,8 @@ private struct SyncStatusCard: View {
                 Text(detail)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(syncState.lastError == nil ? 1 : 2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             if syncState.lastError != nil {
@@ -253,7 +254,7 @@ private struct SyncStatusCard: View {
         if let error = syncState.lastError { return error }
         if let message = syncState.lastMessage { return message }
         if let date = syncState.lastSyncedAt { return "上次同步：\(date.shortString)" }
-        return "需要更新时手动同步，启动时不会自动拉取"
+        return "启动后直接进入书摘，需要更新时再手动同步"
     }
 }
 
